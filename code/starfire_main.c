@@ -12,7 +12,7 @@ Description:
 3 pulse encoder, 30:1 gearing, 32mm wheel, 90ppr x2 mode=180ppr = 0.56mm
 16 bits gives max distance of 2293mm
  
-This version is useing only 4 sensors 2 x 30 and 2 x forward
+This version is using only 4 sensors 2 x 30 and 2 x forward
 *******************************************************************************/
 #pragma config FNOSC = FRCPLL // Oscillator Mode (Internal Fast RC (FRC) w/ PLL)
 #pragma config FWDTEN = OFF   // Watchdog Timer Enable (Watchdog timer
