@@ -2,3 +2,7 @@
 .DS_Store
 *~
 
+/code/StarFire.X/dist/
+/code/StarFire.X/build/
+/code/StarFire.X
+
