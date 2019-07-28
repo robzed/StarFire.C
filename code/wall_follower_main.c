@@ -75,7 +75,7 @@ char buf11[]= "TT     Running\n";
 /* Varibables used in code  */
 /* unsigned 16 bit integers */
 int stop = 0x100;		//
-int long delay;
+int long delay;         // @todo: Does this need volatile so that gcc doesn't optimise it out at larger optimisations?
 int temp;
 unsigned int tick1;
 unsigned int tick2;
@@ -190,7 +190,7 @@ int main()
     R_PWM = max_speed;      //set forward speed for R motor
 /******************************************************************************/
 //This is the main program loop for the wall following function*/
-Follow_Left_wall2:
+//Follow_Left_wall2:
 while (1)
 {
 tick1 = 0;              //reset the tick1 timer for this main loop
@@ -232,7 +232,7 @@ if (PD_error > left_turn_level)
 /******************************************************************/
 //PD_control();
 
- set_motors:
+// set_motors:
 	left_pwm = set_speed - PD_error;	//apply error to left wheel
     if(left_pwm < 0){left_pwm = 0;}
     if(left_pwm > 0x200){left_pwm = 0x200;}
@@ -404,7 +404,7 @@ void read_Bat_volts(void){
     while (!AD1CON1bits.DONE);
     V_bat = ADC1BUF0;
     if (V_bat < low_volts){
-        bat_count = bat_count++;}
+        bat_count++;}
     if  (V_bat > low_volts){
         bat_count = 0;}
     if (bat_count > 1000){
