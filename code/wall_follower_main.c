@@ -110,6 +110,17 @@ int  PD_error;
 
 /* Floating point variables*/
 float V_batf;
+
+
+void wait_for_go(void);
+void read_RF_sensor(void);
+void read_L_sensor(void);
+void read_Bat_volts(void);
+void sensor_display(void);
+void speed_display(void);
+void low_battery(void);
+void init_hardware(void);
+
 /******************************************************************************/
 /*Start of Main Code */
 int main()
