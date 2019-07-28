@@ -21,6 +21,27 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 #include <stdlib.h>
 #include  <xc.h>
 
+#define DIGOLE_OLED 0
+#define SERIAL_TERMINAL 1
+
+#if DIGOLE_OLED
+
+#define CURSOR_OFF "CS0"
+#define CLEAR_SCREEN "CL"
+#define DISPLAY_TEXT "TT"
+#define TEXT_RETURN "TRT"
+
+#elif SERIAL_TERMINAL
+
+#define CURSOR_OFF "\033[0D"    // back 0 spaces, non-empty to avoid warnings
+#define CLEAR_SCREEN "\033[2J" // \033[;H"
+#define DISPLAY_TEXT ""
+#define TEXT_RETURN "\r\n"
+
+#else
+#error "Serial output format not defined!"
+#endif
+
 /* These constants are the ones that need tweaking */
 int left_wall_level = 5;
 int left_turn_level = 20;
@@ -34,17 +55,17 @@ int low_volts = 0x0262;     // 0x0262 6v cut off
 int go_level = 200;
 
 /* Text Strings used for OLED display */
-char buf1[] = "TT    Ver 2.0.3\n";
-char buf2[] = "TT    Sensor's\n";
-char buf3[] = "TTLeft_______Front\n";
-char buf4[] = "TT   Speed M/S\n";
-char buf5[] = "TT 4 x Sensor WF\n";
-char buf6[] = "TT  Pololu Motors\n";
-char buf7[] = "TTMax_Speed     mS\n";
-char buf8[] = "TT   Press R_BUT  \n";
-char buf9[] = "TT   Ready to Go\n";
-char buf10[]= "TT   Sensor Seen\n";
-char buf11[]= "TT     Running\n";
+char buf1[] = DISPLAY_TEXT "    Ver 2.0.3\n";
+char buf2[] = DISPLAY_TEXT "    Sensor's\n";
+char buf3[] = DISPLAY_TEXT "Left_______Front\n";
+char buf4[] = DISPLAY_TEXT "   Speed M/S\n";
+char buf5[] = DISPLAY_TEXT " 4 x Sensor WF\n";
+char buf6[] = DISPLAY_TEXT "  Pololu Motors\n";
+char buf7[] = DISPLAY_TEXT "Max_Speed     mS\n";
+char buf8[] = DISPLAY_TEXT "   Press R_BUT  \n";
+char buf9[] = DISPLAY_TEXT "   Ready to Go\n";
+char buf10[]= DISPLAY_TEXT "   Sensor Seen\n";
+char buf11[]= DISPLAY_TEXT "     Running\n";
 
 /* Defines for later use */
 #define pwr_led	LATBbits.LATB4
@@ -276,12 +297,12 @@ void __attribute__((__interrupt__,__auto_psv__)) _CNInterrupt(void)
 /******************************************************************************/
 //wait for Left wall sensor to see a hand
 void wait_for_go(void){
-    printf ("CL");
-    printf ("TRT");
-    printf ("TRT");
+    printf (CLEAR_SCREEN);
+    printf (TEXT_RETURN);
+    printf (TEXT_RETURN);
     puts(buf9);
-    printf ("TRT");
-    printf ("TT  -------------\n");
+    printf (TEXT_RETURN);
+    printf (DISPLAY_TEXT "  -------------\n");
  
     read_L_sensor();
     //go_level = l_dia + 10;
@@ -291,12 +312,12 @@ void wait_for_go(void){
     {                                   //keep reading the L sensor
         read_L_sensor();
     }
-    printf ("CL");
-    printf ("TRT");
-    printf ("TRT");
+    printf (CLEAR_SCREEN);
+    printf (TEXT_RETURN);
+    printf (TEXT_RETURN);
     puts(buf10);
-    printf ("TRT");
-    printf ("TT  -------------\n");
+    printf (TEXT_RETURN);
+    printf (DISPLAY_TEXT "  -------------\n");
      
     while(l_dia > go_level-10)   //set wall sensor detection lower than
     {                                   //it was to give some hysteresis
@@ -304,12 +325,12 @@ void wait_for_go(void){
     }
     left_led = 0;                       //make sure the L Led is not left ON
     left_wall_level = old_wall_level;   //set wall sensor detection level back
-    printf ("CL");
-    printf ("TRT");
-    printf ("TRT");
+    printf (CLEAR_SCREEN);
+    printf (TEXT_RETURN);
+    printf (TEXT_RETURN);
     puts(buf11);
-    printf ("TRT");
-    printf ("TT  -------------\n");
+    printf (TEXT_RETURN);
+    printf (DISPLAY_TEXT "  -------------\n");
 }                                       
 /******************************************************************************/
 void read_RF_sensor(void){
@@ -412,56 +433,56 @@ void read_Bat_volts(void){
     }
 /******************************************************************************/
 void send_data(void){
-    printf ("CL");
-    printf("TRT");
-    printf ("TT %4d\r\n",prop);
-    printf ("TT %4d\r\n",Sprop);
-    printf ("TT %4d\r\n",Deriv);
-    printf("TRT");
-    printf ("TT %4d\r\n",PD_error);
-    printf ("TT %4d\r\n",L_PWM);
-    printf ("TT %4d\r\n",R_PWM);
+    printf (CLEAR_SCREEN);
+    printf(TEXT_RETURN);
+    printf (DISPLAY_TEXT " %4d\r\n",prop);
+    printf (DISPLAY_TEXT " %4d\r\n",Sprop);
+    printf (DISPLAY_TEXT " %4d\r\n",Deriv);
+    printf(TEXT_RETURN);
+    printf (DISPLAY_TEXT " %4d\r\n",PD_error);
+    printf (DISPLAY_TEXT " %4d\r\n",L_PWM);
+    printf (DISPLAY_TEXT " %4d\r\n",R_PWM);
 }
 /******************************************************************************/
 void sensor_display(void){
-    printf ("CS0");         //Set Cursor OFF
+    printf (CURSOR_OFF);         //Set Cursor OFF
 sensor_disp_loop:
     read_L_sensor();
     read_LF_sensor();
     read_R_sensor();
     read_RF_sensor();
-    printf ("CL");          //Clear Screen
-    printf ("TT    Sensor's\n");
-    printf ("TRT");         //Start New Line 
-    //printf ("TT_Lf__________Rt_\n");
+    printf (CLEAR_SCREEN);          //Clear Screen
+    printf (DISPLAY_TEXT "    Sensor's\n");
+    printf (TEXT_RETURN);         //Start New Line 
+    //printf (DISPLAY_TEXT "_Lf__________Rt_\n");
     puts(buf2);
-    printf ("TRT");    
-    printf ("TT%04x\r\n",l_front);
-    printf ("TT  Frnt  \n");
-    printf ("TT%04x\r\n",r_front);
-    printf ("TRT");
-    printf ("TT%04x\r\n",l_dia);
-    printf ("TT  Diag  \n");
-    printf ("TT%04x\r\n",r_dia); 
-    printf ("TRT");
-    //printf ("TT%04x\r\n",l_side);
-    //printf ("TT  Side  \n");
-    //printf ("TT%04x\r\n",r_side); 
+    printf (TEXT_RETURN);    
+    printf (DISPLAY_TEXT "%04x\r\n",l_front);
+    printf (DISPLAY_TEXT "  Frnt  \n");
+    printf (DISPLAY_TEXT "%04x\r\n",r_front);
+    printf (TEXT_RETURN);
+    printf (DISPLAY_TEXT "%04x\r\n",l_dia);
+    printf (DISPLAY_TEXT "  Diag  \n");
+    printf (DISPLAY_TEXT "%04x\r\n",r_dia); 
+    printf (TEXT_RETURN);
+    //printf (DISPLAY_TEXT "%04x\r\n",l_side);
+    //printf (DISPLAY_TEXT "  Side  \n");
+    //printf (DISPLAY_TEXT "%04x\r\n",r_side); 
     delay = 100000;        //This value 200000 gives about 2sec delay ?
     while(delay--){}        //at 4 MIPS 2400000 at 23 MIPS    
     goto sensor_disp_loop;
 }
 /******************************************************************************/
 void speed_display(void){
-    printf ("CS0");         //Set Cursor OFF
+    printf (CURSOR_OFF);         //Set Cursor OFF
     max_speed = 20;
 speed_disp_loop:    
-    printf ("CL");          //Clear Screen
+    printf (CLEAR_SCREEN);          //Clear Screen
     puts(buf4);
-    printf ("TRT");
-    printf ("TRT");
+    printf (TEXT_RETURN);
+    printf (TEXT_RETURN);
     puts(buf7);
-    printf ("TRT");
+    printf (TEXT_RETURN);
     
     delay = 2000000;        //This value 200000 gives about 2sec delay ?
     while(delay--){}        //at 4 MIPS 2400000 at 23 MIPS 
@@ -478,10 +499,10 @@ speed_disp_loop:
     L_PWM = stop;
     R_PWM = stop;      
 
-    printf ("TT%d\r\n",max_speed);
-    printf ("TT         \n");
-    printf ("TT%d\r\n",temp);
-    printf ("TRT");
+    printf (DISPLAY_TEXT "%d\r\n",max_speed);
+    printf (DISPLAY_TEXT "         \n");
+    printf (DISPLAY_TEXT "%d\r\n",temp);
+    printf (TEXT_RETURN);
  
    // If But_A Not pressed then wait for it to be pressed and released
     while (R_BUT);          // wait for button to be pressed
@@ -492,8 +513,8 @@ speed_disp_loop:
 }
 /******************************************************************************/
 void maze_display(void){
-    //printf ("CS0");         //Set Cursor OFF
-    printf ("CL");          //Clear Screen
+    //printf (CURSOR_OFF);         //Set Cursor OFF
+    printf (CLEAR_SCREEN);          //Clear Screen
     printf ("DR");
     putchar(0); // top left X
     putchar(0); // top left Y
@@ -564,19 +585,19 @@ void init_hardware(void)
 /******************************************************************************/
     /* Configure OLED Display and send Ver No */ 
     //printf ("SB38400\r"); //Set Baud rate to 38400
-    printf ("CS0");         //Set Cursor OFF
-    printf ("CL");          //Clear Screen
-    printf ("TRT");         //Start New Line
+    printf (CURSOR_OFF);         //Set Cursor OFF
+    printf (CLEAR_SCREEN);          //Clear Screen
+    printf (TEXT_RETURN);         //Start New Line
     //printf ("DC0");         //Turn OFF Config display
     //printf ("DSS0");        //Turn OFF Start up Screen
     puts(buf5);             //Print what is in the Buffer5    
-    //printf ("TRT");
+    //printf (TEXT_RETURN);
     //puts(buf6);           //Print what is in the Buffer6   
-    //printf ("TRT");
-    printf ("TRT");
+    //printf (TEXT_RETURN);
+    printf (TEXT_RETURN);
     puts(buf1);             //Print what is in the Buffer1 Ver x.x.x
-    printf ("TRT");
-    printf ("TRT");
+    printf (TEXT_RETURN);
+    printf (TEXT_RETURN);
     puts(buf8);             //Print what is in the Buffer8
 /******************************************************************************/   
     /* Configure T1 Timer Interrupt */
