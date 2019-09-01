@@ -1,6 +1,25 @@
 * Next To Do
 ** Switch display controls optionally to BT serial view
-** Get sensors working
+*** DONE Program serial terminal changes
+*** Test display control changes
+*** Any modification required?
+** Get all sensors working
+*** What sensors are displayed?
+*** Add in extra sensor code
+*** Test all sensors
 * Future To Do
 ** slips on back under of mouse
+** Test motors
+** Test EEPROM
+** Test battery
+** Check delays with delay variable (volatile required for optimisation?)
+** test LEDs
+** Program Modes
+How do button A, button B, sensors and 3 LEDs interoperate?
+*** Wall follower mode
+*** Mouse Test mode
+- Sensor test read mode?
+- motor test read mode?
+- battery read mode?
+*** Maze solver mode
 * Done

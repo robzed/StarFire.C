@@ -55,17 +55,17 @@ int low_volts = 0x0262;     // 0x0262 6v cut off
 int go_level = 200;
 
 /* Text Strings used for OLED display */
-char buf1[] = DISPLAY_TEXT "    Ver 2.0.3\n";
-char buf2[] = DISPLAY_TEXT "    Sensor's\n";
-char buf3[] = DISPLAY_TEXT "Left_______Front\n";
-char buf4[] = DISPLAY_TEXT "   Speed M/S\n";
-char buf5[] = DISPLAY_TEXT " 4 x Sensor WF\n";
-char buf6[] = DISPLAY_TEXT "  Pololu Motors\n";
-char buf7[] = DISPLAY_TEXT "Max_Speed     mS\n";
-char buf8[] = DISPLAY_TEXT "   Press R_BUT  \n";
-char buf9[] = DISPLAY_TEXT "   Ready to Go\n";
-char buf10[]= DISPLAY_TEXT "   Sensor Seen\n";
-char buf11[]= DISPLAY_TEXT "     Running\n";
+char ver_str[]        = DISPLAY_TEXT "    Ver 2.0.3\n";
+char sen_str[]        = DISPLAY_TEXT "    Sensor's\n";
+char lr_str[]         = DISPLAY_TEXT "Left_______Front\n";
+char speed_str[]      = DISPLAY_TEXT "   Speed M/S\n";
+char sensor_wf_str[]  = DISPLAY_TEXT " 4 x Sensor WF\n";
+char pololu_str[]     = DISPLAY_TEXT "  Pololu Motors\n";
+char max_speed_str[]  = DISPLAY_TEXT "Max_Speed     mS\n";
+char press_r_str[]    = DISPLAY_TEXT "   Press R_BUT  \n";
+char ready_str[]      = DISPLAY_TEXT "   Ready to Go\n";
+char sensor_seen_str[]= DISPLAY_TEXT "   Sensor Seen\n";
+char running_str[]    = DISPLAY_TEXT "     Running\n";
 
 /* Defines for later use */
 #define pwr_led	LATBbits.LATB4
@@ -96,7 +96,7 @@ char buf11[]= DISPLAY_TEXT "     Running\n";
 /* Varibables used in code  */
 /* unsigned 16 bit integers */
 int stop = 0x100;		//
-int long delay;         // @todo: Does this need volatile so that gcc doesn't optimise it out at larger optimisations?
+volatile int long delay;         // @todo: Does this need volatile so that gcc doesn't optimise it out at larger optimisations?
 int temp;
 unsigned int tick1;
 unsigned int tick2;
@@ -300,7 +300,7 @@ void wait_for_go(void){
     printf (CLEAR_SCREEN);
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
-    puts(buf9);
+    puts(ready_str);
     printf (TEXT_RETURN);
     printf (DISPLAY_TEXT "  -------------\n");
  
@@ -315,7 +315,7 @@ void wait_for_go(void){
     printf (CLEAR_SCREEN);
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
-    puts(buf10);
+    puts(sensor_seen_str);
     printf (TEXT_RETURN);
     printf (DISPLAY_TEXT "  -------------\n");
      
@@ -328,7 +328,7 @@ void wait_for_go(void){
     printf (CLEAR_SCREEN);
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
-    puts(buf11);
+    puts(running_str);
     printf (TEXT_RETURN);
     printf (DISPLAY_TEXT "  -------------\n");
 }                                       
@@ -455,7 +455,7 @@ sensor_disp_loop:
     printf (DISPLAY_TEXT "    Sensor's\n");
     printf (TEXT_RETURN);         //Start New Line 
     //printf (DISPLAY_TEXT "_Lf__________Rt_\n");
-    puts(buf2);
+    puts(sen_str);
     printf (TEXT_RETURN);    
     printf (DISPLAY_TEXT "%04x\r\n",l_front);
     printf (DISPLAY_TEXT "  Frnt  \n");
@@ -478,10 +478,10 @@ void speed_display(void){
     max_speed = 20;
 speed_disp_loop:    
     printf (CLEAR_SCREEN);          //Clear Screen
-    puts(buf4);
+    puts(speed_str);
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
-    puts(buf7);
+    puts(max_speed_str);
     printf (TEXT_RETURN);
     
     delay = 2000000;        //This value 200000 gives about 2sec delay ?
@@ -590,15 +590,15 @@ void init_hardware(void)
     printf (TEXT_RETURN);         //Start New Line
     //printf ("DC0");         //Turn OFF Config display
     //printf ("DSS0");        //Turn OFF Start up Screen
-    puts(buf5);             //Print what is in the Buffer5    
+    puts(sensor_wf_str);             //Print what is in the Buffer5    
     //printf (TEXT_RETURN);
-    //puts(buf6);           //Print what is in the Buffer6   
+    //puts(pololu_str);           //Print what is in the Buffer6   
     //printf (TEXT_RETURN);
     printf (TEXT_RETURN);
-    puts(buf1);             //Print what is in the Buffer1 Ver x.x.x
+    puts(ver_str);             //Print what is in the Buffer1 Ver x.x.x
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
-    puts(buf8);             //Print what is in the Buffer8
+    puts(press_r_str);             //Print what is in the Buffer8
 /******************************************************************************/   
     /* Configure T1 Timer Interrupt */
     _T1IE = 0;          // T1 Interrupt OFF
