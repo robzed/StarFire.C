@@ -19,9 +19,10 @@
 *** Add in extra sensor code
 *** Test all sensors
 * Future To Do
+** dsPIC PID control library
 ** slips on back under of mouse
 ** Test motors
-** Test EEPROM
+** Test SPI SRAM
 ** Test battery
 ** Check delays with delay variable (volatile required for optimisation?)
 ** test LEDs

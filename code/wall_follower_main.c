@@ -8,7 +8,8 @@ Description:
 2.0.1 Rob's wall following code
 2.0.2 My left turn code
 2.0.3 code for int on change to select run speed
-
+2.0.4 Various rob's changes
+ * 
 3 pulse encoder, 30:1 gearing, 32mm wheel, 90ppr x2 mode=180ppr = 0.56mm
 16 bits gives max distance of 2293mm
  
@@ -55,7 +56,7 @@ int low_volts = 0x0262;     // 0x0262 6v cut off
 int go_level = 200;
 
 /* Text Strings used for OLED display */
-char ver_str[]        = DISPLAY_TEXT "    Ver 2.0.3\n";
+char ver_str[]        = DISPLAY_TEXT "    Ver 2.0.4\n";
 char sen_str[]        = DISPLAY_TEXT "    Sensor's\n";
 char lr_str[]         = DISPLAY_TEXT "Left_______Front\n";
 char speed_str[]      = DISPLAY_TEXT "   Speed M/S\n";
@@ -147,6 +148,7 @@ void sensor_display(void);
 void speed_display(void);
 void low_battery(void);
 void init_hardware(void);
+void do_commands(void);
 
 /******************************************************************************/
 /*Start of Main Code */
@@ -157,6 +159,10 @@ int main()
     left_led = 0;
     right_led = 0;
 
+    if (!L_BUT && !R_BUT)
+    {
+        do_commands();
+    }
     if (!L_BUT){            //if L_BUT held at power on go to sensor display
         sensor_display();}
     if (!R_BUT){            //if R_BUT held at power on go to display speed
@@ -670,9 +676,16 @@ int wait_not_expired(unsigned int end)
     return ((signed int)(tick0_1ms - end)) < 0;
 }
 
+
 // Max at 16 bit = 3 seconds
 void delay_milliseconds(unsigned int milliseconds)
 {
+    while(milliseconds > 3000)
+    {
+        delay_milliseconds(3000);
+        milliseconds -= 3000;
+    }
+    
     int end = calculate_wait_end(milliseconds);
     
     while(wait_not_expired(end))
@@ -681,9 +694,161 @@ void delay_milliseconds(unsigned int milliseconds)
     }
 }
 
+
 // Max at 16 bit = 3 seconds
 void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds)
 {
+    // avoid overflow because of 16 bit
+    while(seconds > 2)
+    {
+        delay_milliseconds(2000);
+        seconds -= 2;
+    }
+    while(milliseconds > 2000)
+    {
+        delay_milliseconds(2000);
+        milliseconds -= 2;
+    }
+    
     // slightly inefficient, but convenient
     delay_milliseconds(seconds*1000 + milliseconds);
 }
+
+/******************************************************************************/
+
+//
+int read_line(char *buffer, int max_len)
+{
+    int len = 0;
+    char c;
+    // clear errors
+    if(U1STAbits.OERR == 1)
+    {
+         U1STAbits.OERR = 0;
+    }
+    
+    // read a line
+    while(max_len > 0)
+    {
+        while (U1STAbits.URXDA == 0) { 
+            // wait
+        }
+        //if ((ustatus->URXDA) == 0) break;
+        c = U1RXREG;
+        if(c == 10 || c == 13)
+        {
+            break;
+        }
+        if(c >= 32)     // don't store control characters
+        {
+            *buffer = c;
+            putchar(*buffer);
+            buffer++;
+            max_len--;
+            len++;
+        }
+    }
+    // zero terminate it always
+    if(max_len==0)
+    {
+        buffer--;
+    }
+    *buffer = 0;
+    
+    printf(TEXT_RETURN);
+    return len;
+}
+
+int running = 1;
+
+void exit_cmd(void)
+{
+    running = 0;
+}
+
+void ticks_cmd(void)
+{
+   printf("%d" TEXT_RETURN, tick0_1ms);
+}
+void ms_cmd(void)
+{
+   printf("%d" TEXT_RETURN, tick0_1ms/10);
+}
+
+void delay_cmd(void)
+{
+    delay_seconds_milliseconds(10, 0);
+}
+
+typedef struct { 
+    const char* cmd;
+    void (*func)(void);
+} command_type;
+
+command_type commands[] = {
+    { "ticks", ticks_cmd },
+    { "ms", ms_cmd },
+    { "delay", delay_cmd },
+    { "exit", exit_cmd },
+    { 0, 0}
+};
+
+int s_equal(const char* c_str, const char* s2, int len2)
+{
+    char c;
+    while(1)
+    {
+        c = *c_str;
+        if(c == 0 || len2 == 0 || c != *s2)
+        {
+            break;
+        }
+        len2 --;
+        c_str++;
+        s2++;
+    }
+    
+    // check for match finished
+    if(c == 0 && len2 == 0)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+void run_command(const char* c, int len)
+{
+    command_type* cp = commands;
+    while(1)
+    {
+        if(cp->cmd == 0)
+        {
+            printf("?" TEXT_RETURN);
+            break;
+        }
+        //printf("Checking %s", cp->cmd);
+        if(s_equal(cp->cmd, c, len))
+        {
+            cp->func();
+            break;
+        }
+        cp++;
+    }
+}
+
+        #define CMD_LEN 80
+        char cmdbuf[CMD_LEN+1];
+
+void do_commands(void)
+{
+    while(running)
+    {
+        printf("> ");
+        int len = read_line(cmdbuf, CMD_LEN);
+        if (len > 0)
+        {
+            run_command(cmdbuf, len);
+        }
+    }
+}
+
