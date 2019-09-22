@@ -96,10 +96,10 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 /* Varibables used in code  */
 /* unsigned 16 bit integers */
 int stop = 0x100;		//
-volatile int long delay;         // @todo: Does this need volatile so that gcc doesn't optimise it out at larger optimisations?
 int temp;
 unsigned int tick1;
 unsigned int tick2;
+unsigned int tick0_1ms;
 unsigned int V_bat;
 unsigned int bat_count = 0x0000;
 int dark;
@@ -132,6 +132,12 @@ int  PD_error;
 /* Floating point variables*/
 float V_batf;
 
+//
+// function definitions
+//
+void delay_milliseconds(unsigned int milliseconds);
+void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds);
+//void short_delay(unsigned int microseconds);
 
 void wait_for_go(void);
 void read_RF_sensor(void);
@@ -157,7 +163,6 @@ int main()
         speed_display();}
     
     // If But_A Not pressed then wait for it to be pressed and released
-    T1CONbits.TON = 1;      // Start Timer
     while (R_BUT)          // wait for button to be pressed
     {
     blink = run_speed;
@@ -192,8 +197,7 @@ int main()
     left_led = 0;
     right_led = 0;
     
-    tick1 = 0;               // clear the 0.1mS tick timer
-    while(tick1 < 20000){}   // Delay 2 sec before starting off
+    delay_seconds_milliseconds(2,0);    // Delay 2 sec before starting off
     
 //set the distance to stay away from the left wall  
     read_L_sensor();
@@ -283,7 +287,8 @@ void __attribute__((__interrupt__,__auto_psv__)) _T1Interrupt(void)
     IFS0bits.T1IF = 0; 		/* clear interrupt flag */
     tick1++;
     tick2++;
-    }
+    tick0_1ms++;
+}
 /******************************************************************************/
 /* Change Notification interrupt routine */
 void __attribute__((__interrupt__,__auto_psv__)) _CNInterrupt(void)
@@ -446,70 +451,72 @@ void send_data(void){
 /******************************************************************************/
 void sensor_display(void){
     printf (CURSOR_OFF);         //Set Cursor OFF
-sensor_disp_loop:
-    read_L_sensor();
-    read_LF_sensor();
-    read_R_sensor();
-    read_RF_sensor();
-    printf (CLEAR_SCREEN);          //Clear Screen
-    printf (DISPLAY_TEXT "    Sensor's\n");
-    printf (TEXT_RETURN);         //Start New Line 
-    //printf (DISPLAY_TEXT "_Lf__________Rt_\n");
-    puts(sen_str);
-    printf (TEXT_RETURN);    
-    printf (DISPLAY_TEXT "%04x\r\n",l_front);
-    printf (DISPLAY_TEXT "  Frnt  \n");
-    printf (DISPLAY_TEXT "%04x\r\n",r_front);
-    printf (TEXT_RETURN);
-    printf (DISPLAY_TEXT "%04x\r\n",l_dia);
-    printf (DISPLAY_TEXT "  Diag  \n");
-    printf (DISPLAY_TEXT "%04x\r\n",r_dia); 
-    printf (TEXT_RETURN);
-    //printf (DISPLAY_TEXT "%04x\r\n",l_side);
-    //printf (DISPLAY_TEXT "  Side  \n");
-    //printf (DISPLAY_TEXT "%04x\r\n",r_side); 
-    delay = 100000;        //This value 200000 gives about 2sec delay ?
-    while(delay--){}        //at 4 MIPS 2400000 at 23 MIPS    
-    goto sensor_disp_loop;
+    
+    while(1)
+    {
+        read_L_sensor();
+        read_LF_sensor();
+        read_R_sensor();
+        read_RF_sensor();
+        printf (CLEAR_SCREEN);          //Clear Screen
+        printf (DISPLAY_TEXT "    Sensor's\n");
+        printf (TEXT_RETURN);         //Start New Line 
+        //printf (DISPLAY_TEXT "_Lf__________Rt_\n");
+        puts(sen_str);
+        printf (TEXT_RETURN);    
+        printf (DISPLAY_TEXT "%04x\r\n",l_front);
+        printf (DISPLAY_TEXT "  Frnt  \n");
+        printf (DISPLAY_TEXT "%04x\r\n",r_front);
+        printf (TEXT_RETURN);
+        printf (DISPLAY_TEXT "%04x\r\n",l_dia);
+        printf (DISPLAY_TEXT "  Diag  \n");
+        printf (DISPLAY_TEXT "%04x\r\n",r_dia); 
+        printf (TEXT_RETURN);
+        //printf (DISPLAY_TEXT "%04x\r\n",l_side);
+        //printf (DISPLAY_TEXT "  Side  \n");
+        //printf (DISPLAY_TEXT "%04x\r\n",r_side); 
+
+        delay_seconds_milliseconds(1,0);
+    }
 }
 /******************************************************************************/
 void speed_display(void){
     printf (CURSOR_OFF);         //Set Cursor OFF
     max_speed = 20;
-speed_disp_loop:    
-    printf (CLEAR_SCREEN);          //Clear Screen
-    puts(speed_str);
-    printf (TEXT_RETURN);
-    printf (TEXT_RETURN);
-    puts(max_speed_str);
-    printf (TEXT_RETURN);
     
-    delay = 2000000;        //This value 200000 gives about 2sec delay ?
-    while(delay--){}        //at 4 MIPS 2400000 at 23 MIPS 
-    L_PWM = stop + max_speed;      //set forward speed for L motor
-    R_PWM = stop + max_speed;      //set forward speed for R motor
-    PR1 = 0x0166;           // set period1 register 0x0166 = 1mS    
-    PTCONbits.PTEN = 1;     // Start PWM
-    T1CONbits.TON = 1;      // Start Timer
-    POS1CNT = 0;
-    tick1 = 0;
-    
-    while(POS1CNT < 1790){} //1m of wheel rotations
-    temp = tick1;
-    L_PWM = stop;
-    R_PWM = stop;      
+    while(1)
+    {
+        printf (CLEAR_SCREEN);          //Clear Screen
+        puts(speed_str);
+        printf (TEXT_RETURN);
+        printf (TEXT_RETURN);
+        puts(max_speed_str);
+        printf (TEXT_RETURN);
 
-    printf (DISPLAY_TEXT "%d\r\n",max_speed);
-    printf (DISPLAY_TEXT "         \n");
-    printf (DISPLAY_TEXT "%d\r\n",temp);
-    printf (TEXT_RETURN);
- 
-   // If But_A Not pressed then wait for it to be pressed and released
-    while (R_BUT);          // wait for button to be pressed
-    while (!R_BUT);         // wait for it to be released    
-    //while(1){}        //at 4 MIPS 2400000 at 23 MIPS    
-    max_speed = max_speed + 5;
-    goto speed_disp_loop;
+        delay_seconds_milliseconds(2,0);
+        L_PWM = stop + max_speed;      //set forward speed for L motor
+        R_PWM = stop + max_speed;      //set forward speed for R motor
+        PR1 = 0x0166;           // set period1 register 0x0166 = 1mS    
+        PTCONbits.PTEN = 1;     // Start PWM
+        POS1CNT = 0;
+        tick1 = 0;
+
+        while(POS1CNT < 1790){} //1m of wheel rotations
+        temp = tick1;
+        L_PWM = stop;
+        R_PWM = stop;      
+
+        printf (DISPLAY_TEXT "%d\r\n",max_speed);
+        printf (DISPLAY_TEXT "         \n");
+        printf (DISPLAY_TEXT "%d\r\n",temp);
+        printf (TEXT_RETURN);
+
+       // If But_A Not pressed then wait for it to be pressed and released
+        while (R_BUT);          // wait for button to be pressed
+        while (!R_BUT);         // wait for it to be released    
+        //while(1){}        //at 4 MIPS 2400000 at 23 MIPS    
+        max_speed = max_speed + 5;
+    }
 }
 /******************************************************************************/
 void maze_display(void){
@@ -532,20 +539,21 @@ disp_loop:
 // Come here and loop forever when battery volts low
 void low_battery(void){
     PTCONbits.PTEN = 0;     // Stop PWM
-    T1CONbits.TON = 0;      // Stop Timer
+    //T1CONbits.TON = 0;      // Don't stop Timer ... we use it for timing still
     pwr_led = 0;
     left_led = 0;
     right_led = 0;
     L_PWM = stop;
     R_PWM = stop;
-low_bat_loop:               //Blink PWR LED to show mouse shut down due to low bat
-    delay = 2000000;        //This value 2000000 gives about 1.43sec delay
-    while(delay--){}        
-    pwr_led = 1;
-    delay = 200000;         //This value 200000 gives about 130mS delay
-    while(delay--){}        
-    pwr_led = 0;
-    goto low_bat_loop;
+    
+    //Blink PWR LED to show mouse shut down due to low bat
+    while(1)
+    {
+        delay_seconds_milliseconds(1,430);
+        pwr_led = 1;
+        delay_seconds_milliseconds(0,130);
+        pwr_led = 0;
+    }
 }
 /******************************************************************************/
 /* Here we Initialize all of the I/O pins and hardware setup                  */
@@ -610,6 +618,7 @@ void init_hardware(void)
     IFS0bits.T1IF = 0; 	/* clear interrupt flag */
     IEC0bits.T1IE = 1; 	/* enable interrupts */
     SRbits.IPL = 3;   	/* enable CPU priority levels 4-7 */
+    T1CONbits.TON = 1;      // Start Timer
 /******************************************************************************/
     /* Configure Pin Change Interrupt*/
     CNEN2bits.CN26IE = 1;   //set RC5 L_BUT for change interrupt
@@ -632,3 +641,49 @@ void init_hardware(void)
     R_PWM = stop;
     }
 /******************************************************************************/
+
+// Subtraction of two n-bit values wraps modulo 2n - which C99 guarantees for subtraction of unsigned values.
+// Assume unsigned to signed cast will work. Alternatively could use:
+// #include <limits.h>
+    // unsigned subtraction always works for wrap around, as long as it doesn't
+    // wrap twice:
+    //   * Obviously works if start < curent
+    //   * If start very high number (say -half time, and end is +half time)
+    //     then while tick is less than wrap then XXXXX
+    //          while tick is more than wrap, but less than +half time then YYYYY
+    //          while tick is more than +half time then ZZZZZ
+
+unsigned int calculate_wait_end(unsigned int length_in_milliseconds)
+{
+    return tick0_1ms + (10 * length_in_milliseconds);
+}
+
+int wait_expired(unsigned int end)
+{
+    //return (tick0_1ms - end) < UINT_MAX/2;
+    return ((signed int)(tick0_1ms - end)) >= 0;
+}
+
+int wait_not_expired(unsigned int end)
+{
+    //return (tick0_1ms - end) >= UINT_MAX/2;
+    return ((signed int)(tick0_1ms - end)) < 0;
+}
+
+// Max at 16 bit = 3 seconds
+void delay_milliseconds(unsigned int milliseconds)
+{
+    int end = calculate_wait_end(milliseconds);
+    
+    while(wait_not_expired(end))
+    {
+        // wait until the time is up
+    }
+}
+
+// Max at 16 bit = 3 seconds
+void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds)
+{
+    // slightly inefficient, but convenient
+    delay_milliseconds(seconds*1000 + milliseconds);
+}

@@ -1,4 +1,15 @@
 * Next To Do
+** 1. Remove tick1 tick2 and existing time-out code
+** 2. Fix indent.
+** 3. Test display code
+** 4. Figure out if tests works (LBUT / RBUT on start)
+** 5. Look at before main loop starts (beginning on main())
+** 6. Look at proper running code
+** 7. Figure out rest of wall follower code
+** 8. Look at sensor code
+** 9. Test on track
+** 10. Fix wobble
+** 11. Look at wall follower
 ** Switch display controls optionally to BT serial view
 *** DONE Program serial terminal changes
 *** Test display control changes
