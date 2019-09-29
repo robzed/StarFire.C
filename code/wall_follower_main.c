@@ -132,7 +132,7 @@ int  Deriv;
 int  PD_error;
 
 /* Floating point variables*/
-float V_batf;
+//float V_batf;
 
 //
 // function definitions
@@ -149,7 +149,9 @@ void sensor_display(void);
 void speed_display(void);
 void low_battery(void);
 void init_hardware(void);
+#if SERIAL_TERMINAL
 void do_commands(void);
+#endif
 
 /******************************************************************************/
 /*Start of Main Code */
@@ -160,10 +162,13 @@ int main()
     left_led = 0;
     right_led = 0;
 
+#if SERIAL_TERMINAL
     if (!L_BUT && !R_BUT)
     {
         do_commands();
     }
+#endif
+    
     if (!L_BUT){            //if L_BUT held at power on go to sensor display
         sensor_display();}
     if (!R_BUT){            //if R_BUT held at power on go to display speed
@@ -716,7 +721,7 @@ void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds)
 }
 
 /******************************************************************************/
-
+#if SERIAL_TERMINAL
 //
 void read_line(char *buffer, int max_len)
 {
@@ -732,6 +737,7 @@ void read_line(char *buffer, int max_len)
     {
         while (U1STAbits.URXDA == 0) { 
             // wait
+            read_Bat_volts();
         }
         //if ((ustatus->URXDA) == 0) break;
         c = U1RXREG;
@@ -781,8 +787,17 @@ void delay_cmd(const char* args)
     delay_seconds_milliseconds(delay_in_seconds, 0);
 }
 
-void help_cmd(const char* args);
+void bat_cmd()
+{
+    // 10 bit mode = 1024 levels
+    // divider = 4k7 / 10k
+    // ADC Ref = 3.3v
+    // Therefore voltage in mV = (value / (ADC_ref * 1024)) * 14k7/4k7 * 1000 
+    //                        = value * 10.079
+    printf("%u" TEXT_RETURN, V_bat);
+}
 
+void help_cmd(const char* args);
 
 typedef struct { 
     const char* cmd;
@@ -796,6 +811,7 @@ command_type commands[] = {
     { "exit", exit_cmd },
     { "?", help_cmd },
     { "help", help_cmd },
+    { "bat", bat_cmd },
     { 0, 0}
 };
 
@@ -849,3 +865,4 @@ void do_commands(void)
     }
 }
 
+#endif
