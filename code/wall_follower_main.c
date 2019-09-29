@@ -21,6 +21,7 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 #include <stdio.h>
 #include <stdlib.h>
 #include  <xc.h>
+#include <string.h>
 
 #define DIGOLE_OLED 0
 #define SERIAL_TERMINAL 1
@@ -717,9 +718,8 @@ void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds)
 /******************************************************************************/
 
 //
-int read_line(char *buffer, int max_len)
+void read_line(char *buffer, int max_len)
 {
-    int len = 0;
     char c;
     // clear errors
     if(U1STAbits.OERR == 1)
@@ -739,14 +739,11 @@ int read_line(char *buffer, int max_len)
         {
             break;
         }
-        if(c >= 32)     // don't store control characters
-        {
-            *buffer = c;
-            putchar(*buffer);
-            buffer++;
-            max_len--;
-            len++;
-        }
+        
+        *buffer = c;
+        putchar(*buffer);
+        buffer++;
+        max_len--;
     }
     // zero terminate it always
     if(max_len==0)
@@ -756,33 +753,40 @@ int read_line(char *buffer, int max_len)
     *buffer = 0;
     
     printf(TEXT_RETURN);
-    return len;
 }
 
 int running = 1;
 
-void exit_cmd(void)
+void exit_cmd(const char* args)
 {
     running = 0;
 }
 
-void ticks_cmd(void)
+void ticks_cmd(const char* args)
 {
    printf("%d" TEXT_RETURN, tick0_1ms);
 }
-void ms_cmd(void)
+void ms_cmd(const char* args)
 {
    printf("%d" TEXT_RETURN, tick0_1ms/10);
 }
 
-void delay_cmd(void)
+void delay_cmd(const char* args)
 {
-    delay_seconds_milliseconds(10, 0);
+    unsigned int delay_in_seconds = 1;
+    if(args != 0)
+    {
+        sscanf(args, "%u", &delay_in_seconds);
+    }
+    delay_seconds_milliseconds(delay_in_seconds, 0);
 }
+
+void help_cmd(const char* args);
+
 
 typedef struct { 
     const char* cmd;
-    void (*func)(void);
+    void (*func)(const char* args);
 } command_type;
 
 command_type commands[] = {
@@ -790,65 +794,58 @@ command_type commands[] = {
     { "ms", ms_cmd },
     { "delay", delay_cmd },
     { "exit", exit_cmd },
+    { "?", help_cmd },
+    { "help", help_cmd },
     { 0, 0}
 };
 
-int s_equal(const char* c_str, const char* s2, int len2)
-{
-    char c;
-    while(1)
-    {
-        c = *c_str;
-        if(c == 0 || len2 == 0 || c != *s2)
-        {
-            break;
-        }
-        len2 --;
-        c_str++;
-        s2++;
-    }
-    
-    // check for match finished
-    if(c == 0 && len2 == 0)
-    {
-        return 1;
-    }
-    return 0;
-}
-
-void run_command(const char* c, int len)
+void help_cmd(const char* args)
 {
     command_type* cp = commands;
+    const char* cmd;
+    while( (cmd = cp++->cmd) )
+    {
+        printf("%s ", cmd);
+    }
+    printf(TEXT_RETURN);
+}
+
+#define CMD_LEN 80
+char cmdbuf[CMD_LEN+1];
+
+void run_command(char* str)
+{
+    if(str == 0) { return; }
+    
+    command_type* cp = commands;
+    char* token = strtok(str, " \t"); 
     while(1)
     {
-        if(cp->cmd == 0)
+
+        if(cp->cmd == 0 || token == 0)
         {
             printf("?" TEXT_RETURN);
             break;
         }
+        
         //printf("Checking %s", cp->cmd);
-        if(s_equal(cp->cmd, c, len))
+        if(strcmp(cp->cmd, token)==0)
         {
-            cp->func();
+            cp->func(strtok(NULL, ""));
             break;
         }
         cp++;
     }
 }
 
-        #define CMD_LEN 80
-        char cmdbuf[CMD_LEN+1];
 
 void do_commands(void)
 {
     while(running)
     {
-        printf("> ");
-        int len = read_line(cmdbuf, CMD_LEN);
-        if (len > 0)
-        {
-            run_command(cmdbuf, len);
-        }
+        printf(TEXT_RETURN "> ");
+        read_line(cmdbuf, CMD_LEN);
+        run_command(cmdbuf);
     }
 }
 
