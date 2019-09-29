@@ -99,9 +99,9 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 /* unsigned 16 bit integers */
 int stop = 0x100;		//
 int temp;
-unsigned int tick1;
-unsigned int tick2;
-unsigned int tick0_1ms;
+volatile unsigned int tick1;
+volatile unsigned int tick2;
+volatile unsigned int tick0_1ms;
 unsigned int V_bat;
 unsigned int bat_count = 0x0000;
 int dark;
@@ -116,7 +116,7 @@ int distance;
 int wf_dis;
 int set_speed;
 int max_speed;
-int run_speed = 1;
+volatile int run_speed = 1;
 int blink;
 int left_pwm;
 int right_pwm;
