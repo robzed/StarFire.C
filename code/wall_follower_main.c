@@ -857,6 +857,7 @@ void run_command(char* str)
 
 void do_commands(void)
 {
+    running = 1;
     while(running)
     {
         printf(TEXT_RETURN "> ");
