@@ -228,11 +228,13 @@ int main()
     /******************************************************************************/
     //This is the main program loop for the wall following function*/
     //Follow_Left_wall2:
-    while (1) {
+    while (1)
+    {
         tick1 = 0; //reset the tick1 timer for this main loop
 
         read_RF_sensor();
-        if (r_front > front_wall_level) {
+        if (r_front > front_wall_level)
+        {
             L_PWM = Lspin; //Spin clockwise
             R_PWM = Rspin;
             POS1CNT = 0; //zero the Left wheel counter
@@ -245,16 +247,19 @@ int main()
 
         read_L_sensor();
 
-        if ((wf_dis - l_dia) > 0) {
+        if ((wf_dis - l_dia) > 0)
+        {
             //to far right
             PD_error = (wf_dis - l_dia) / 2;
         }
-        else {
+        else
+        {
             //to far left
             PD_error = (wf_dis - l_dia) / 20; //8    
         }
         /******************************************************************/
-        if (PD_error > left_turn_level) {
+        if (PD_error > left_turn_level)
+        {
             L_PWM = Lturn; //Smooth turn to the left
             R_PWM = Rturn; //Smooth turn to the left
             POS2CNT = 0; //zero the Left wheel counter
@@ -265,11 +270,12 @@ int main()
 //PD_control();
 
 // set_motors:
-	left_pwm = set_speed - PD_error;	//apply error to left wheel
+    left_pwm = set_speed - PD_error;	//apply error to left wheel
     if(left_pwm < 0){left_pwm = 0;}
     if(left_pwm > 0x200){left_pwm = 0x200;}
     L_PWM = left_pwm;
-	right_pwm = set_speed + PD_error;	//apply error to right wheel
+    
+    right_pwm = set_speed + PD_error;	//apply error to right wheel
     if(right_pwm < 0){right_pwm = 0;}
     if(right_pwm > 0x200){right_pwm = 0x200;}
     R_PWM = right_pwm;
