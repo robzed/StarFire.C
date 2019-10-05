@@ -797,6 +797,29 @@ void bat_cmd()
     printf("%u" TEXT_RETURN, V_bat);
 }
 
+void led_cmd(const char* args)
+{
+    unsigned int led = 0;
+    unsigned int led_on = 1;
+    if(args != 0)
+    {
+        sscanf(args, "%u %u", &led, &led_on);
+    }
+    led_on = led_on?1:0;
+    if(led == 0)
+    {
+        left_led = led_on;
+    }
+    else if(led == 1)
+    {
+        pwr_led = led_on;
+    }
+    else
+    {
+        right_led = led_on;
+    }
+}
+
 void help_cmd(const char* args);
 
 typedef struct { 
@@ -812,6 +835,7 @@ command_type commands[] = {
     { "?", help_cmd },
     { "help", help_cmd },
     { "bat", bat_cmd },
+    { "led", led_cmd },
     { 0, 0}
 };
 
