@@ -225,47 +225,42 @@ int main()
     Rturn = stop+max_speed * 1.2; //1.3 Speed for Right motor for Left turn
     L_PWM = max_speed;      //set forward speed for L motor
     R_PWM = max_speed;      //set forward speed for R motor
-/******************************************************************************/
-//This is the main program loop for the wall following function*/
-//Follow_Left_wall2:
-while (1)
-{
-tick1 = 0;              //reset the tick1 timer for this main loop
+    /******************************************************************************/
+    //This is the main program loop for the wall following function*/
+    //Follow_Left_wall2:
+    while (1) {
+        tick1 = 0; //reset the tick1 timer for this main loop
 
-    read_RF_sensor();
-    if (r_front > front_wall_level)
-    {
-        L_PWM = Lspin;      //Spin clockwise
-        R_PWM = Rspin;
-        POS1CNT = 0;        //zero the Left wheel counter
-        while(POS1CNT < 100); // Left wheel counter
-        //tick2 = 0;          //reset tick2 timer for Right spin time
-        //L_PWM = Rspin;      //Spin anticlockwise to stop
-        //R_PWM = Lspin;      // over shoot
-        //while(tick2 < 20){} //2mS
-    }     
-    
-read_L_sensor();
+        read_RF_sensor();
+        if (r_front > front_wall_level) {
+            L_PWM = Lspin; //Spin clockwise
+            R_PWM = Rspin;
+            POS1CNT = 0; //zero the Left wheel counter
+            while (POS1CNT < 100); // Left wheel counter
+            //tick2 = 0;          //reset tick2 timer for Right spin time
+            //L_PWM = Rspin;      //Spin anticlockwise to stop
+            //R_PWM = Lspin;      // over shoot
+            //while(tick2 < 20){} //2mS
+        }
 
-if((wf_dis - l_dia) > 0)
-{
-    //to far right
-    PD_error = (wf_dis - l_dia)/2;
-}   
-else
-{
-    //to far left
-    PD_error = (wf_dis - l_dia)/20; //8    
-}
-/******************************************************************/ 
-if (PD_error > left_turn_level)
-{
-    L_PWM = Lturn;      //Smooth turn to the left
-    R_PWM = Rturn;      //Smooth turn to the left
-    POS2CNT = 0;        //zero the Left wheel counter
-    while(POS2CNT < 50); // right wheel counter
-    PD_error = 0;
-}
+        read_L_sensor();
+
+        if ((wf_dis - l_dia) > 0) {
+            //to far right
+            PD_error = (wf_dis - l_dia) / 2;
+        }
+        else {
+            //to far left
+            PD_error = (wf_dis - l_dia) / 20; //8    
+        }
+        /******************************************************************/
+        if (PD_error > left_turn_level) {
+            L_PWM = Lturn; //Smooth turn to the left
+            R_PWM = Rturn; //Smooth turn to the left
+            POS2CNT = 0; //zero the Left wheel counter
+            while (POS2CNT < 50); // right wheel counter
+            PD_error = 0;
+        }
 /******************************************************************/
 //PD_control();
 
