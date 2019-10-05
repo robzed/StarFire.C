@@ -324,6 +324,7 @@ void wait_for_go(void){
     {                                   //keep reading the L sensor
         read_L_sensor();
     }
+    left_led = 1;
     clear_screen();
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
@@ -337,6 +338,7 @@ void wait_for_go(void){
     }
     left_led = 0;                       //make sure the L Led is not left ON
     left_wall_level = old_wall_level;   //set wall sensor detection level back
+    left_led = 0;
     clear_screen();
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
@@ -815,6 +817,21 @@ void led_cmd(const char* args)
     }
 }
 
+void wait_for_go_cmd(const char* args)
+{
+    unsigned int runs = 1;
+    if(args != 0)
+    {
+        sscanf(args, "%u", &runs);
+    }
+    while(runs)
+    {
+        printf("Run %u\n\r", runs);
+        wait_for_go();
+        runs --;
+    }
+}
+
 void help_cmd(const char* args);
 
 typedef struct { 
@@ -831,6 +848,7 @@ command_type commands[] = {
     { "help", help_cmd },
     { "bat", bat_cmd },
     { "led", led_cmd },
+    { "wait_for_go", wait_for_go_cmd },
     { 0, 0}
 };
 
