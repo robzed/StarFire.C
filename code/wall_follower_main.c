@@ -28,15 +28,15 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 
 #if DIGOLE_OLED
 
-#define CURSOR_OFF "CS0"
-#define CLEAR_SCREEN "CL"
+#define cursor_off() printf("CS0")
+#define clear_screen() printf("CL")
 #define DISPLAY_TEXT "TT"
 #define TEXT_RETURN "TRT"
 
 #elif SERIAL_TERMINAL
 
-#define CURSOR_OFF "\033[0D"    // back 0 spaces, non-empty to avoid warnings
-#define CLEAR_SCREEN "\033[2J" // \033[;H"
+#define cursor_off() // do nothing   // "\033[0D"    // back 0 spaces, non-empty to avoid warnings
+#define clear_screen()              //"\033[2J" // \033[;H"
 #define DISPLAY_TEXT ""
 #define TEXT_RETURN "\r\n"
 
@@ -314,7 +314,7 @@ void __attribute__((__interrupt__,__auto_psv__)) _CNInterrupt(void)
 /******************************************************************************/
 //wait for Left wall sensor to see a hand
 void wait_for_go(void){
-    printf (CLEAR_SCREEN);
+    clear_screen();
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
     puts(ready_str);
@@ -329,7 +329,7 @@ void wait_for_go(void){
     {                                   //keep reading the L sensor
         read_L_sensor();
     }
-    printf (CLEAR_SCREEN);
+    clear_screen();
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
     puts(sensor_seen_str);
@@ -342,7 +342,7 @@ void wait_for_go(void){
     }
     left_led = 0;                       //make sure the L Led is not left ON
     left_wall_level = old_wall_level;   //set wall sensor detection level back
-    printf (CLEAR_SCREEN);
+    clear_screen();
     printf (TEXT_RETURN);
     printf (TEXT_RETURN);
     puts(running_str);
@@ -450,7 +450,7 @@ void read_Bat_volts(void){
     }
 /******************************************************************************/
 void send_data(void){
-    printf (CLEAR_SCREEN);
+    clear_screen();
     printf(TEXT_RETURN);
     printf (DISPLAY_TEXT " %4d\r\n",prop);
     printf (DISPLAY_TEXT " %4d\r\n",Sprop);
@@ -462,7 +462,7 @@ void send_data(void){
 }
 /******************************************************************************/
 void sensor_display(void){
-    printf (CURSOR_OFF);         //Set Cursor OFF
+    cursor_off();         //Set Cursor OFF
     
     while(1)
     {
@@ -470,7 +470,7 @@ void sensor_display(void){
         read_LF_sensor();
         read_R_sensor();
         read_RF_sensor();
-        printf (CLEAR_SCREEN);          //Clear Screen
+        clear_screen();          //Clear Screen
         printf (DISPLAY_TEXT "    Sensor's\n");
         printf (TEXT_RETURN);         //Start New Line 
         //printf (DISPLAY_TEXT "_Lf__________Rt_\n");
@@ -493,12 +493,12 @@ void sensor_display(void){
 }
 /******************************************************************************/
 void speed_display(void){
-    printf (CURSOR_OFF);         //Set Cursor OFF
+    cursor_off();         //Set Cursor OFF
     max_speed = 20;
     
     while(1)
     {
-        printf (CLEAR_SCREEN);          //Clear Screen
+        clear_screen();          //Clear Screen
         puts(speed_str);
         printf (TEXT_RETURN);
         printf (TEXT_RETURN);
@@ -532,8 +532,8 @@ void speed_display(void){
 }
 /******************************************************************************/
 void maze_display(void){
-    //printf (CURSOR_OFF);         //Set Cursor OFF
-    printf (CLEAR_SCREEN);          //Clear Screen
+    //cursor_off();         //Set Cursor OFF
+    clear_screen();          //Clear Screen
     printf ("DR");
     putchar(0); // top left X
     putchar(0); // top left Y
@@ -605,8 +605,8 @@ void init_hardware(void)
 /******************************************************************************/
     /* Configure OLED Display and send Ver No */ 
     //printf ("SB38400\r"); //Set Baud rate to 38400
-    printf (CURSOR_OFF);         //Set Cursor OFF
-    printf (CLEAR_SCREEN);          //Clear Screen
+    cursor_off();         //Set Cursor OFF
+    clear_screen();          //Clear Screen
     printf (TEXT_RETURN);         //Start New Line
     //printf ("DC0");         //Turn OFF Config display
     //printf ("DSS0");        //Turn OFF Start up Screen
