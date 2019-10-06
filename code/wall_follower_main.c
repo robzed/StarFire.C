@@ -10,10 +10,15 @@ Description:
 2.0.3 code for int on change to select run speed
 2.0.4 Various rob's changes
  * 
-3 pulse encoder, 30:1 gearing, 32mm wheel, 90ppr x2 mode=180ppr = 0.56mm
+3 pulse encoder, 30:1 gearing, 32mm wheel, 90ppr x2 mode=180ppr = 0.5585mm = 0.56mm approx
 16 bits gives max distance of 2293mm
- 
+
 This version is using only 4 sensors 2 x 30 and 2 x forward
+ * 
+ * Distance between wheel centers = 77mm approx.
+ * Circle = Pi * D = 3.14159 * 77 = 241.9 mm (242mm)
+ * Half turn = 121 mm
+ * Quarter turn = 60.5 mm
 *******************************************************************************/
 #pragma config FNOSC = FRCPLL // Oscillator Mode (Internal Fast RC (FRC) w/ PLL)
 #pragma config FWDTEN = OFF   // Watchdog Timer Enable (Watchdog timer
