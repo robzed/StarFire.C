@@ -106,7 +106,14 @@ int stop = 0x100;		//
 volatile unsigned int tick1;
 volatile unsigned int tick2;
 volatile unsigned int tick0_1ms;
-unsigned int V_bat;
+unsigned int V_bat;     // raw ADC reading for battery. 
+// 1024@3.3v 0-3.3 input. divider = 4k7/10k. 
+// 1v at battery input = 0.3197v at ADC input
+// 1 level = 3300mV/1024 = 3.223mV per level
+// 319.7mV / 3.223mV =  99.19 = 1v. 
+// 7v = 694.33
+// 1/99.19 = 1% increase.. e.g. 694.33 + 1% = 701
+// = Hardly worth it.
 unsigned int bat_count = 0x0000;
 int dark;
 int l_dia;
@@ -575,6 +582,8 @@ void low_battery(void){
     L_PWM = stop;
     R_PWM = stop;
     
+    printf("/r/nHALT:Low Bat %d mV/r/n", (int)(V_bat*10.1));
+    
     //Blink PWR LED to show mouse shut down due to low bat
     while(1)
     {
@@ -803,7 +812,7 @@ void bat_cmd()
     // ADC Ref = 3.3v
     // Therefore voltage in mV = (value / (ADC_ref * 1024)) * 14k7/4k7 * 1000 
     //                        = value * 10.079
-    printf("%u" TEXT_RETURN, V_bat);
+    printf("%d mV" TEXT_RETURN, (int)(V_bat*10.1));
 }
 
 void led_cmd(const char* args)
