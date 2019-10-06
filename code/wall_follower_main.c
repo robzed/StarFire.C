@@ -135,6 +135,7 @@ int Rspin;
 int Lspin;
 int Lturn;
 int Rturn;
+//int Left_turn_start_distance;
 int prop;
 /* signed 16 bit integers*/
 int  Sprop;
@@ -257,7 +258,8 @@ int main()
     // these might need adjusting for different speeds...
     Lturn = stop+max_speed * 0.5; //0.5 Speed for Left motor for Left turn
     Rturn = stop+max_speed * 1.3; //1.3 Speed for Right motor for Left turn
-    Lturn_start_distance = 20;
+    //Left_turn_start_distance = 20;
+
     L_PWM = max_speed;      //set forward speed for L motor
     R_PWM = max_speed;      //set forward speed for R motor
     /******************************************************************************/
@@ -295,6 +297,11 @@ int main()
         /******************************************************************/
         if (PD_error > left_turn_level)
         {
+            // carry on going a short way
+            //POS2CNT = 0; //zero the Left wheel counter
+            //while (-(POS2CNT) < Left_turn_start_distance); // right wheel counter
+            
+            // now do the turn
             L_PWM = Lturn; //Smooth turn to the left
             R_PWM = Rturn; //Smooth turn to the left
             POS2CNT = 0; //zero the Left wheel counter
