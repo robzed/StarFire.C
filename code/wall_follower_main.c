@@ -93,6 +93,7 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 #define IR_6_TRIS _TRISA9
 #define L_PWM PDC2
 #define R_PWM PDC3
+#define kbhit() U1STAbits.URXDA
 
 /* Varibables used in code  */
 /* unsigned 16 bit integers */
@@ -725,7 +726,7 @@ void read_line(char *buffer, int max_len)
     // read a line
     while(max_len > 0)
     {
-        while (U1STAbits.URXDA == 0) { 
+        while (! kbhit()) { 
             // wait
             read_Bat_volts();
         }
@@ -825,6 +826,82 @@ void wait_for_go_cmd(const char* args)
     }
 }
 
+void move_test_cmd(const char* args)
+{
+    //set the distance to stay away from the left wall  
+    read_L_sensor();
+    wf_dis = l_dia; //set the distance away from wall
+    if (wf_dis == 0)
+    {
+        wf_dis = 1;
+    }
+
+    /******************************************************************************/
+    //This is the main program loop for the wall following function*/
+    //Follow_Left_wall2:
+    while (1)
+    {
+        tick1 = 0; //reset the tick1 timer for this main loop
+
+        read_RF_sensor();
+        if (r_front > front_wall_level)
+        {
+            printf("Spin Right\r\n");
+        }
+
+        read_L_sensor();
+
+        if ((wf_dis - l_dia) > 0)
+        {
+            //to far right
+            PD_error = (wf_dis - l_dia) / 2;
+            if (PD_error > left_turn_level)
+            {
+                printf("Turn Left\r\n");
+            }
+            else
+            {
+                printf("Drift Left\r\n");
+            }
+        }
+        else
+        {
+            //to far left
+            PD_error = (wf_dis - l_dia) / 20; //8    
+            printf("Drift Right\r\n");
+        }
+        /******************************************************************/
+ 
+        read_Bat_volts();
+
+        while (tick1 < 5000) // 0.5s loop time
+        { // abort if serial key pressed
+            if (kbhit())
+            {
+                break;
+            }
+        }
+        if (kbhit())
+        {
+            break;
+        }
+    }
+}
+
+void set_fw_cmd(const char* args)
+{
+    int level = -1;
+    if(args != 0)
+    {
+        sscanf(args, "%d", &level);
+    }
+
+    if(level > 0)
+    {
+        front_wall_level = level;
+    }
+}
+
 void help_cmd(const char* args);
 
 typedef struct { 
@@ -842,6 +919,9 @@ command_type commands[] = {
     { "bat", bat_cmd },
     { "led", led_cmd },
     { "wait_for_go", wait_for_go_cmd },
+    { "move_test", move_test_cmd },
+    { "set_fw", set_fw_cmd },
+
     { 0, 0}
 };
 
