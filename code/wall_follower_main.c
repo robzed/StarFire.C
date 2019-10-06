@@ -57,8 +57,7 @@ int low_volts = 0x0262;     // 0x0262 6v cut off
 int go_level = 200;
 
 /* Text Strings used for OLED display */
-char ver_str[]        = DISPLAY_TEXT "    Ver 2.0.4\n";
-char sen_str[]        = DISPLAY_TEXT "    Sensor's\n";
+const char ver_str[]        = DISPLAY_TEXT "    Ver 2.0.4\n";
 char lr_str[]         = DISPLAY_TEXT "Left_______Front\n";
 char speed_str[]      = DISPLAY_TEXT "   Speed M/S\n";
 char sensor_wf_str[]  = DISPLAY_TEXT " 4 x Sensor WF\n";
