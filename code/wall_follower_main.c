@@ -109,9 +109,9 @@ int r_dia;
 int l_front;
 int r_front;
 int old_wall_level;
-int r_count;        //
-int l_count;        //POS1CNT
-int distance;
+//int r_count;        //
+//int l_count;        //POS1CNT
+//int distance;
 int wf_dis;
 int set_speed;
 int max_speed;
