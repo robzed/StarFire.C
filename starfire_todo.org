@@ -1,6 +1,7 @@
 * Next To Do
 ** [#B] Figure out why it doesn't turn left
 ** [#B] Make a turn and spin command?
+** PR1 is being changed
 ** Make a simple maze solver
 ** Remove OLED stuff, clean up prints
 
@@ -13,6 +14,7 @@
 ** quit wall follower mode when key or button is pressed
 ** allow sensor and/or move mode 
 ** why does move mode pause?
+ - PR is being changed
 
 ** Tidy up variables at top - some surely could be local variables?
 ** [#A] Read C compiler manual - limitations on local variables

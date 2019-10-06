@@ -98,7 +98,7 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 #define IR_6_TRIS _TRISA9
 #define L_PWM PDC2
 #define R_PWM PDC3
-#define kbhit() U1STAbits.URXDA
+
 
 /* Varibables used in code  */
 /* unsigned 16 bit integers */
@@ -157,6 +157,21 @@ void init_hardware(void);
 void do_commands(void);
 #endif
 
+// borland c like functions
+#define kbhit() U1STAbits.URXDA
+int getch(void)
+{ 
+    while (! kbhit()) { 
+        // wait
+        read_Bat_volts();
+    }
+    //if ((ustatus->URXDA) == 0) break;
+    return U1RXREG;
+    
+}
+int getche(void) { int cbuf = getch(); putchar(cbuf); return cbuf; }
+#define clear_overflow() if(U1STAbits.OERR == 1) { U1STAbits.OERR = 0; }
+
 /******************************************************************************/
 /*Start of Main Code */
 int main()
@@ -193,6 +208,12 @@ int main()
         while (tick1 < 5000);
         blink--;
         }
+        if (kbhit())
+        {
+            getch();
+            do_commands();
+        }
+
     tick2 = 0;
     while (tick2 < 10000){if(!R_BUT) tick2 = 10001;}    
     }
@@ -721,22 +742,14 @@ void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds)
 //
 void read_line(char *buffer, int max_len)
 {
-    char c;
+    int c;
     // clear errors
-    if(U1STAbits.OERR == 1)
-    {
-         U1STAbits.OERR = 0;
-    }
+    clear_overflow();
     
     // read a line
     while(max_len > 0)
     {
-        while (! kbhit()) { 
-            // wait
-            read_Bat_volts();
-        }
-        //if ((ustatus->URXDA) == 0) break;
-        c = U1RXREG;
+        c = getch();
         if(c == 10 || c == 13)
         {
             break;
@@ -888,6 +901,7 @@ void action_test_cmd(const char* args)
         }
         if (kbhit())
         {
+            getch();
             break;
         }
     }
