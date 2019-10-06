@@ -464,8 +464,8 @@ void send_data(void){
     printf (DISPLAY_TEXT " %4d\r\n",R_PWM);
 }
 /******************************************************************************/
+
 void sensor_display(void){
-    cursor_off();         //Set Cursor OFF
     
     while(1)
     {
@@ -473,23 +473,11 @@ void sensor_display(void){
         read_LF_sensor();
         read_R_sensor();
         read_RF_sensor();
-        clear_screen();          //Clear Screen
-        printf (DISPLAY_TEXT "    Sensor's\n");
-        printf (TEXT_RETURN);         //Start New Line 
-        //printf (DISPLAY_TEXT "_Lf__________Rt_\n");
-        puts(sen_str);
-        printf (TEXT_RETURN);    
-        printf (DISPLAY_TEXT "%04x\r\n",l_front);
-        printf (DISPLAY_TEXT "  Frnt  \n");
-        printf (DISPLAY_TEXT "%04x\r\n",r_front);
-        printf (TEXT_RETURN);
-        printf (DISPLAY_TEXT "%04x\r\n",l_dia);
-        printf (DISPLAY_TEXT "  Diag  \n");
-        printf (DISPLAY_TEXT "%04x\r\n",r_dia); 
-        printf (TEXT_RETURN);
-        //printf (DISPLAY_TEXT "%04x\r\n",l_side);
-        //printf (DISPLAY_TEXT "  Side  \n");
-        //printf (DISPLAY_TEXT "%04x\r\n",r_side); 
+
+        printf ("    Sensor's\r\n");
+        printf ("%6d Frnt %6d\r\n",l_front, r_front);
+        printf ("\r\n");
+        printf ("%6d Diag %6d\r\n",l_dia, r_dia); 
 
         delay_seconds_milliseconds(1,0);
     }
