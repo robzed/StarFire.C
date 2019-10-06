@@ -831,7 +831,7 @@ void wait_for_go_cmd(const char* args)
     }
 }
 
-void move_test_cmd(const char* args)
+void action_test_cmd(const char* args)
 {
     //set the distance to stay away from the left wall  
     read_L_sensor();
@@ -907,6 +907,76 @@ void set_fw_cmd(const char* args)
     }
 }
 
+void lturn_cmd (const char* args)
+{
+    int my_distance = 50;
+    int my_speed = speed1;
+    if(args != 0)
+    {
+        sscanf(args, "%d %d", &my_distance, &my_speed);
+    }
+
+    Lturn = stop + my_speed * 0.6; //0.5 Speed for Left motor for Left turn
+    Rturn = stop + my_speed * 1.2; //1.3 Speed for Right motor for Left turn
+
+    L_PWM = Lturn; //Smooth turn to the left
+    R_PWM = Rturn; //Smooth turn to the left
+    
+    PTCONbits.PTEN = 1;     // Start PWM
+
+    POS2CNT = 0; //zero the Left wheel counter
+    while (POS2CNT < my_distance); // right wheel counter
+
+    L_PWM = stop;
+    R_PWM = stop;  
+}
+
+
+void rspin_cmd (const char* args)
+{
+    int my_distance = 100;
+    int my_speed = speed1;
+    if(args != 0)
+    {
+        sscanf(args, "%d %d", &my_distance, &my_speed);
+    }
+
+    L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
+    R_PWM = stop-my_speed; // Speed for Right motor for clockwise spin
+
+    PTCONbits.PTEN = 1;     // Start PWM
+
+    // 100 counts = 56mm, quarter turn is 60.5mm
+    POS1CNT = 0; //zero the Left wheel counter
+    while (POS1CNT < my_distance); // Left wheel counter
+
+    L_PWM = stop;
+    R_PWM = stop;  
+}
+
+void fwd_cmd(const char* args)
+{
+    int my_distance = 100;
+    int my_speed = speed1;
+    if(args != 0)
+    {
+        sscanf(args, "%d %d", &my_distance, &my_speed);
+    }
+    
+    L_PWM = stop+my_speed;
+    R_PWM = stop+my_speed;
+
+    PTCONbits.PTEN = 1;     // Start PWM
+
+    // 100 counts = 56mm, quarter turn is 60.5mm
+    POS1CNT = 0; //zero the Left wheel counter
+    while (POS1CNT < my_distance); // Left wheel counter
+
+    L_PWM = stop;
+    R_PWM = stop;  
+}
+
+
 void help_cmd(const char* args);
 
 typedef struct { 
@@ -924,8 +994,11 @@ command_type commands[] = {
     { "bat", bat_cmd },
     { "led", led_cmd },
     { "wait_for_go", wait_for_go_cmd },
-    { "move_test", move_test_cmd },
+    { "action_test", action_test_cmd },
+    { "lturn", lturn_cmd },
+    { "rspin", rspin_cmd },
     { "set_fw", set_fw_cmd },
+    { "fwd", fwd_cmd },
 
     { 0, 0}
 };
