@@ -1,4 +1,26 @@
 * Next To Do
+** [#B] Figure out why it doesn't turn left
+** [#B] Make a turn and spin command?
+** Make a simple maze solver
+** Remove OLED stuff, clean up prints
+
+** tweak movement constants
+** implement getch and getche
+** more robust serial handling (avoid losing characters)
+ - e.g. during pauses (make a serial buffer function)
+
+** allow entry of terminal mode from waiting for run
+** quit wall follower mode when key or button is pressed
+** allow sensor and/or move mode 
+** why does move mode pause?
+
+** Tidy up variables at top - some surely could be local variables?
+** [#A] Read C compiler manual - limitations on local variables
+** DONE const vs. non-const allocation
+** Read language tools manual
+** SPI RAM read/write
+** Warm start vs. power on detection, preserve maze map variable, etc.
+** -----------------------------------------------
 ** 1. Remove tick1 tick2 and existing time-out code
 ** 2. Fix indent.
 ** 3. Test display code
