@@ -18,7 +18,7 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
  * Distance between wheel centers = 77mm approx.
  * Circle = Pi * D = 3.14159 * 77 = 241.9 mm (242mm)
  * Half turn = 121 mm
- * Quarter turn = 60.5 mm
+ * Quarter turn = 60.5 mm ... should be 433, actually 390.
 *******************************************************************************/
 #pragma config FNOSC = FRCPLL // Oscillator Mode (Internal Fast RC (FRC) w/ PLL)
 #pragma config FWDTEN = OFF   // Watchdog Timer Enable (Watchdog timer
@@ -253,8 +253,11 @@ int main()
     set_speed = stop + max_speed;
     Lspin = stop+max_speed; // Speed for Left motor for clockwise spin
     Rspin = stop-max_speed; // Speed for Right motor for clockwise spin
-    Lturn = stop+max_speed * 0.6; //0.5 Speed for Left motor for Left turn
-    Rturn = stop+max_speed * 1.2; //1.3 Speed for Right motor for Left turn
+    
+    // these might need adjusting for different speeds...
+    Lturn = stop+max_speed * 0.5; //0.5 Speed for Left motor for Left turn
+    Rturn = stop+max_speed * 1.3; //1.3 Speed for Right motor for Left turn
+    Lturn_start_distance = 20;
     L_PWM = max_speed;      //set forward speed for L motor
     R_PWM = max_speed;      //set forward speed for R motor
     /******************************************************************************/
@@ -295,7 +298,7 @@ int main()
             L_PWM = Lturn; //Smooth turn to the left
             R_PWM = Rturn; //Smooth turn to the left
             POS2CNT = 0; //zero the Left wheel counter
-            while (POS2CNT < 50); // right wheel counter
+            while (-(POS2CNT) < 50); // right wheel counter
             PD_error = 0;
         }
 /******************************************************************/
@@ -941,6 +944,7 @@ void lturn_cmd (const char* args)
 
     Lturn = stop + my_speed * 0.6; //0.5 Speed for Left motor for Left turn
     Rturn = stop + my_speed * 1.2; //1.3 Speed for Right motor for Left turn
+    printf("%i %i %i %i\r\n", my_distance, my_speed, Lturn, Rturn);
 
     L_PWM = Lturn; //Smooth turn to the left
     R_PWM = Rturn; //Smooth turn to the left
@@ -948,7 +952,9 @@ void lturn_cmd (const char* args)
     PTCONbits.PTEN = 1;     // Start PWM
 
     POS2CNT = 0; //zero the Left wheel counter
-    while (POS2CNT < my_distance); // right wheel counter
+    printf("%i %i\r\n", POS1CNT, POS2CNT);
+    while (-(POS2CNT) < my_distance); // right wheel counter
+    printf("%i %i\r\n", POS1CNT, POS2CNT);
 
     L_PWM = stop;
     R_PWM = stop;  

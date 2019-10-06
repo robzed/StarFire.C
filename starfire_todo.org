@@ -1,16 +1,19 @@
 * Next To Do
-** [#B] Figure out why it doesn't turn left
-** [#B] Make a turn and spin command?
-** PR1 is being changed
+** DONE Figure out why it doesn't turn left
+** DONE Make a turn and spin command?
+** Tune left hand turns
+** Tune speed 2
+** Tune speed 3
+** PR1 is being changed - check out usage - do we need to do this?
 ** Make a simple maze solver
 ** Remove OLED stuff, clean up prints
 
 ** tweak movement constants
-** implement getch and getche
+** DONE implement getch and getche
 ** more robust serial handling (avoid losing characters)
  - e.g. during pauses (make a serial buffer function)
 
-** allow entry of terminal mode from waiting for run
+** DONE allow entry of terminal mode from waiting for run
 ** quit wall follower mode when key or button is pressed
 ** allow sensor and/or move mode 
 ** why does move mode pause?
@@ -21,6 +24,11 @@
 ** DONE const vs. non-const allocation
 ** Read language tools manual
 ** SPI RAM read/write
+- would allow logging of complex data quickly
+- e.g. speed vs. sensors, etc. 
+- PID controller
+--- speed and position stablisation
+
 ** Warm start vs. power on detection, preserve maze map variable, etc.
 ** -----------------------------------------------
 ** 1. Remove tick1 tick2 and existing time-out code
