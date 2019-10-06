@@ -97,7 +97,6 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 /* Varibables used in code  */
 /* unsigned 16 bit integers */
 int stop = 0x100;		//
-int temp;
 volatile unsigned int tick1;
 volatile unsigned int tick2;
 volatile unsigned int tick0_1ms;
@@ -483,6 +482,7 @@ void sensor_display(void){
 }
 /******************************************************************************/
 void speed_display(void){
+    int temp;
     cursor_off();         //Set Cursor OFF
     max_speed = 20;
     
