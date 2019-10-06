@@ -47,7 +47,7 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 /* These constants are the ones that need tweaking */
 int left_wall_level = 5;
 int left_turn_level = 20;
-int front_wall_level = 230;
+int front_wall_level = 80; // 230;
 int speed1 = 60;
 int speed2 = 70;
 int speed3 = 80;
