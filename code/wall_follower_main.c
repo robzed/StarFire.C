@@ -158,12 +158,13 @@ void read_RF_sensor(void);
 void read_L_sensor(void);
 void read_Bat_volts(void);
 void sensor_display(void);
-void speed_display(void);
+void speed_display(int distance);
 void low_battery(void);
 void init_hardware(void);
 #if SERIAL_TERMINAL
 void do_commands(void);
 #endif
+void lturn(int straight_distance, int my_distance, int my_speed);
 
 // borland c like functions
 #define kbhit() U1STAbits.URXDA
@@ -179,6 +180,7 @@ int getch(void)
 }
 int getche(void) { int cbuf = getch(); putchar(cbuf); return cbuf; }
 #define clear_overflow() if(U1STAbits.OERR == 1) { U1STAbits.OERR = 0; }
+
 
 /******************************************************************************/
 /*Start of Main Code */
@@ -199,7 +201,7 @@ int main()
     if (!L_BUT){            //if L_BUT held at power on go to sensor display
         sensor_display();}
     if (!R_BUT){            //if R_BUT held at power on go to display speed
-        speed_display();}
+        speed_display(0);}
     
     // If But_A Not pressed then wait for it to be pressed and released
     while (R_BUT)          // wait for button to be pressed
@@ -300,12 +302,40 @@ int main()
             // carry on going a short way
             //POS2CNT = 0; //zero the Left wheel counter
             //while (-(POS2CNT) < Left_turn_start_distance); // right wheel counter
+
+//#define SELECT_ALTERATIVE_LTURN
+
+#ifdef SELECT_ALTERATIVE_LTURN
             
+            while(1)
+            {
+                // 30mm forward, then 
+                lturn(70, 300, max_speed);
+                read_L_sensor();
+
+                if ((wf_dis - l_dia) > 0)
+                {
+                    //to far right
+                    PD_error = (wf_dis - l_dia) / 2;
+                }
+                else
+                {
+                    //to far left
+                    PD_error = (wf_dis - l_dia) / 20; //8    
+                }
+                /******************************************************************/
+                if (PD_error < left_turn_level)
+                {
+                    break;
+                }
+            }
+#else
             // now do the turn
             L_PWM = Lturn; //Smooth turn to the left
             R_PWM = Rturn; //Smooth turn to the left
             POS2CNT = 0; //zero the Left wheel counter
             while (-(POS2CNT) < 50); // right wheel counter
+#endif
             PD_error = 0;
         }
 /******************************************************************/
@@ -509,7 +539,7 @@ void send_data(void){
 
 void sensor_display(void){
     
-    while(1)
+    while(! kbhit())
     {
         read_L_sensor();
         read_LF_sensor();
@@ -523,14 +553,19 @@ void sensor_display(void){
 
         delay_seconds_milliseconds(1,0);
     }
+    getch();
 }
 /******************************************************************************/
-void speed_display(void){
+void speed_display(int distance){
     int temp;
+    if(distance <= 0)
+    {
+        distance = 1790;
+    }
     cursor_off();         //Set Cursor OFF
     max_speed = 20;
     
-    while(1)
+    while(! kbhit())
     {
         clear_screen();          //Clear Screen
         puts(speed_str);
@@ -542,7 +577,7 @@ void speed_display(void){
         delay_seconds_milliseconds(2,0);
         L_PWM = stop + max_speed;      //set forward speed for L motor
         R_PWM = stop + max_speed;      //set forward speed for R motor
-        PR1 = 0x0166;           // set period1 register 0x0166 = 1mS    
+        //PR1 = 0x0166;           // set period1 register 0x0166 = 1mS    
         PTCONbits.PTEN = 1;     // Start PWM
         POS1CNT = 0;
         tick1 = 0;
@@ -550,11 +585,11 @@ void speed_display(void){
         while(POS1CNT < 1790){} //1m of wheel rotations
         temp = tick1;
         L_PWM = stop;
-        R_PWM = stop;      
+        R_PWM = stop;
 
         printf (DISPLAY_TEXT "%d\r\n",max_speed);
         printf (DISPLAY_TEXT "         \n");
-        printf (DISPLAY_TEXT "%d\r\n",temp);
+        printf (DISPLAY_TEXT "%d\r\n",temp/10);
         printf (TEXT_RETURN);
 
        // If But_A Not pressed then wait for it to be pressed and released
@@ -563,6 +598,8 @@ void speed_display(void){
         //while(1){}        //at 4 MIPS 2400000 at 23 MIPS    
         max_speed = max_speed + 5;
     }
+    getch();
+
 }
 /******************************************************************************/
 void maze_display(void){
@@ -942,27 +979,86 @@ void set_fw_cmd(const char* args)
 
 void lturn_cmd (const char* args)
 {
+    int straight_distance = 20;
     int my_distance = 50;
     int my_speed = speed1;
     if(args != 0)
     {
-        sscanf(args, "%d %d", &my_distance, &my_speed);
+        sscanf(args, "%d %d %d", &straight_distance, &my_distance, &my_speed);
     }
+    printf("%i %i %i\r\n", straight_distance, my_distance, my_speed);
+    lturn(straight_distance, my_distance, my_speed);
+    
+    L_PWM = stop;
+    R_PWM = stop;  
+}
 
-    Lturn = stop + my_speed * 0.6; //0.5 Speed for Left motor for Left turn
-    Rturn = stop + my_speed * 1.2; //1.3 Speed for Right motor for Left turn
-    printf("%i %i %i %i\r\n", my_distance, my_speed, Lturn, Rturn);
+void lturn(int straight_distance, int my_distance, int my_speed)
+{
+    Lturn = stop + my_speed * 0.5; //0.5 Speed for Left motor for Left turn
+    Rturn = stop + my_speed * 1.3; //1.3 Speed for Right motor for Left turn
+
+    L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
+    R_PWM = stop+my_speed; // Speed for Right motor for clockwise spin
+
+    PTCONbits.PTEN = 1;     // Start PWM
+
+        // 100 counts = 56mm, quarter turn is 60.5mm
+    POS1CNT = 0; //zero the Left wheel counter
+    while (POS1CNT < straight_distance); // Left wheel counter
 
     L_PWM = Lturn; //Smooth turn to the left
     R_PWM = Rturn; //Smooth turn to the left
     
+    POS2CNT = 0; //zero the Left wheel counter
+    //printf("%i %i\r\n", POS1CNT, POS2CNT);
+    while (-(POS2CNT) < my_distance); // right wheel counter
+    //printf("%i %i\r\n", POS1CNT, POS2CNT);
+
+}
+
+
+void lturn_tweak(int straight_distance, int my_distance, int my_speed, int lturn_ratio, int rturn_ratio)
+{
+    float lturn_f = lturn_ratio / 10.0;
+    float rturn_f = rturn_ratio / 10.0;
+    Lturn = stop + my_speed * lturn_f; //0.5 Speed for Left motor for Left turn
+    Rturn = stop + my_speed * rturn_f; //1.3 Speed for Right motor for Left turn
+
+    L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
+    R_PWM = stop+my_speed; // Speed for Right motor for clockwise spin
+
     PTCONbits.PTEN = 1;     // Start PWM
 
-    POS2CNT = 0; //zero the Left wheel counter
-    printf("%i %i\r\n", POS1CNT, POS2CNT);
-    while (-(POS2CNT) < my_distance); // right wheel counter
-    printf("%i %i\r\n", POS1CNT, POS2CNT);
+        // 100 counts = 56mm, quarter turn is 60.5mm
+    POS1CNT = 0; //zero the Left wheel counter
+    while (POS1CNT < straight_distance); // Left wheel counter
 
+    L_PWM = Lturn; //Smooth turn to the left
+    R_PWM = Rturn; //Smooth turn to the left
+    
+    POS2CNT = 0; //zero the Left wheel counter
+    //printf("%i %i\r\n", POS1CNT, POS2CNT);
+    while (-(POS2CNT) < my_distance); // right wheel counter
+    //printf("%i %i\r\n", POS1CNT, POS2CNT);
+
+}
+
+void lturn_tweak_cmd (const char* args)
+{
+    int straight_distance = 20;
+    int my_distance = 50;
+    int my_speed = speed1;
+    int lturn = 0.5;
+    int rturn = 1.3;
+    
+    if(args != 0)
+    {
+        sscanf(args, "%d %d %d %d %d", &straight_distance, &my_distance, &my_speed, &lturn, &rturn);
+    }
+    printf("%i %i %i %i %i\r\n", straight_distance, my_distance, my_speed, lturn, rturn);
+    lturn_tweak(straight_distance, my_distance, my_speed, lturn, rturn);
+    
     L_PWM = stop;
     R_PWM = stop;  
 }
@@ -1012,6 +1108,20 @@ void fwd_cmd(const char* args)
     R_PWM = stop;  
 }
 
+void speed_display_cmd(const char* args)
+{
+    int my_distance = 0;
+    if(args != 0)
+    {
+        sscanf(args, "%d", &my_distance);
+    }
+    speed_display(my_distance);
+}
+
+void sensor_display_cmd(const char* args)
+{
+    sensor_display();
+}
 
 void help_cmd(const char* args);
 
@@ -1035,6 +1145,8 @@ command_type commands[] = {
     { "rspin", rspin_cmd },
     { "set_fw", set_fw_cmd },
     { "fwd", fwd_cmd },
+    { "speed_display", speed_display_cmd },
+    { "sensor_display", sensor_display_cmd },
 
     { 0, 0}
 };

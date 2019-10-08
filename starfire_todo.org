@@ -1,4 +1,22 @@
 * Next To Do
+** TODO Turning cirle
+0.5 1.3 is slightly too small - make bigger
+70 300 is a quarter
+70 1200 is a full circle
+** TODO Speeds wrong at start?
+
+// shouldn't these be set_speed????
+    L_PWM = max_speed;      //set forward speed for L motor
+    R_PWM = max_speed;      //set forward speed for R motor
+
+** DONE Make a square 
+- greater that 1 sq., E.G. 2X2 - allow to compensate
+- also could do largest square
+** DONE Make a line
+2x180 degree turns
+** Staircase pattern
+** Make start with movement components for maze solver
+- would allow to develop controlled l-turn
 ** DONE Figure out why it doesn't turn left
 ** DONE Make a turn and spin command?
 ** Tune left hand turns
