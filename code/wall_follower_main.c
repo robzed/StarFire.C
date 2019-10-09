@@ -143,6 +143,8 @@ int  last_prop;
 int  Deriv;
 int  PD_error;
 
+int wall_tracking;      // a counter for how long we've been tracking the wall
+
 /* Floating point variables*/
 //float V_batf;
 
@@ -282,6 +284,10 @@ int main()
             //L_PWM = Rspin;      //Spin anticlockwise to stop
             //R_PWM = Lspin;      // over shoot
             //while(tick2 < 20){} //2mS
+            wall_tracking = 0;
+            // added for wall tracking purposes
+            POS1CNT = 0; //zero the Left wheel counter
+            POS2CNT = 0; //zero the Left wheel counter
         }
 
         read_L_sensor();
@@ -299,12 +305,16 @@ int main()
         /******************************************************************/
         if (PD_error > left_turn_level)
         {
+            left_led = 0;
             // carry on going a short way
             //POS2CNT = 0; //zero the Left wheel counter
             //while (-(POS2CNT) < Left_turn_start_distance); // right wheel counter
 
+#define TRACKED_DISTANCE 100     // 100 = 100/2 * 0.6 = 3cm,     50 = 50/2 * 0.6mm = 1.5cm
 //#define SELECT_ALTERATIVE_LTURN
-
+#define SELECT_ALTERATIVE_LTURN2
+//#define SELECT_ALTERATIVE_LTURN3
+//#define SELECT_ALTERATIVE_LTURN4
 #ifdef SELECT_ALTERATIVE_LTURN
             
             while(1)
@@ -329,6 +339,42 @@ int main()
                     break;
                 }
             }
+#elif defined(SELECT_ALTERATIVE_LTURN2)
+            if(wall_tracking > TRACKED_DISTANCE)
+            {
+                // 30mm forward, then turn
+                lturn(70, 300, max_speed);
+            }
+            else
+            {
+                // we are not tracking a wall, no need to clear it
+                lturn(0, 50, max_speed);
+            }
+#elif defined(SELECT_ALTERATIVE_LTURN3)
+            // we could try to go forward for 30mm after wall tracking only
+            // then use the partial turn code below, rather than a full quarter turn
+            // then continue around loop
+            if(wall_tracking > TRACKED_DISTANCE)
+            {
+                L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
+                R_PWM = stop+my_speed; // Speed for Right motor for clockwise spin
+
+                PTCONbits.PTEN = 1;     // Start PWM
+
+                POS1CNT = 0; //zero the Left wheel counter
+                while (POS1CNT < 70); // Left wheel counter
+            }
+            
+            // now do the turn
+            L_PWM = Lturn; //Smooth turn to the left
+            R_PWM = Rturn; //Smooth turn to the left
+            POS2CNT = 0; //zero the Left wheel counter
+            while (-(POS2CNT) < 50); // right wheel counter
+            
+#elif defined(SELECT_ALTERNAIVE_LTURN4)
+            // we could try to go forward for 30mm after wall tracking only
+            // then use the partial turn code below, rather than a full quarter turn
+            // and continue turning until we see a left hand wall...
 #else
             // now do the turn
             L_PWM = Lturn; //Smooth turn to the left
@@ -337,7 +383,23 @@ int main()
             while (-(POS2CNT) < 50); // right wheel counter
 #endif
             PD_error = 0;
+            wall_tracking = 0;
         }
+        else
+        {
+            if(wall_tracking < 10000)
+            {
+                wall_tracking += (POS1CNT-POS2CNT);  // 0.6mm = 2 counts
+            }
+            if(wall_tracking > TRACKED_DISTANCE)
+            {
+                left_led = 1;
+            }
+       }
+        // added for wall tracking purposes
+        POS1CNT = 0; //zero the Left wheel counter
+        POS2CNT = 0; //zero the Left wheel counter
+
 /******************************************************************/
 //PD_control();
 
