@@ -111,10 +111,10 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 #define SRAM_CS LATAbits.LATA3
 #define SRAM_CS_TRIS _TRISA3
 
-#define SPIOUT_PIN LATBbits.LATB9
-#define SPIOUT_TRIS _TRISB9
-#define SPIIN_PIN LATBbits.LATB7
-#define SPIIN_TRIS _TRISB7
+//#define SPIOUT_PIN LATBbits.LATB9
+//#define SPIOUT_TRIS _TRISB9
+//#define SPIIN_PIN LATBbits.LATB7
+//#define SPIIN_TRIS _TRISB7
 
 
 /* Varibables used in code  */
@@ -752,11 +752,11 @@ void init_hardware(void)
     RPINR14 =0x1716;        //Pins 2(RP22), 3(RP23) for QEI 1 inputs
     RPINR16 =0x1918;        //Pins 4(RP24), 5(RP25) for QEI 2 inputs
     // spi setup
-    //RPINR20 = 0xFF07;// SPI1 Data Input, SPI IN, RP7, pin 43   
-    //RPOR4 = 0x0708; // function 8 = SPI1 Clock Output, SPI CLK RP8 (lower byte), pin 44)
+    RPINR20 = 0xFF07;// SPI1 Data Input, SPI IN, RP7, pin 43   
+    RPOR4 = 0x0708; // function 8 = SPI1 Clock Output, SPI CLK RP8 (lower byte), pin 44)
                     // function 7 = SPI1 Data Output, SPI OUT, RP9 (upper byte), pin 1
     
-    //Init_SPI();
+    Init_SPI();
     
     /* Configure the UART */
     U1MODE = 0x8400;        // 2 stop bits needed for crownhill display
@@ -1452,6 +1452,7 @@ void spiw_cmd(const char* args)
     SPI_write_finish();
 }
 
+/*
 void spio_test_cmd(const char* args)
 {
     int i;
@@ -1479,7 +1480,7 @@ void spii_test_cmd(const char* args)
     }
     SPIIN_TRIS = 1;
 }
-
+*/
 
 void help_cmd(const char* args);
 
@@ -1508,8 +1509,8 @@ command_type commands[] = {
     //{ "calexport", calexport_cmd },
     { "por", por_cmd },
     { "spiw", spiw_cmd },
-    { "spio_test", spio_test_cmd },
-    { "spii_test", spii_test_cmd },
+    //{ "spio_test", spio_test_cmd },
+    //{ "spii_test", spii_test_cmd },
 
     { 0, 0}
 };
