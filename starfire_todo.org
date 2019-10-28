@@ -1,4 +1,5 @@
 * Next To Do
+** Add delete to command line interpreter
 ** TODO Turning cirle
 0.5 1.3 is slightly too small - make bigger
 70 300 is a quarter
@@ -84,4 +85,76 @@ How do button A, button B, sensors and 3 LEDs interoperate?
 - motor test read mode?
 - battery read mode?
 *** Maze solver mode
+* Notes
+** Maze solver
+*** Sensing
+*** Modes
+- explore mode
+*** List of features
+- four sensors
+- speed control
+- position tracking via odemetry
+- realignment of position by walls
+- left/right centering
+- left/right offset calculation
+- angle calculation
+- diagonal centering
+- flood fill maze solver (potentially incremental)
+- lost detection
+- acceleration control
+- sensor calibration process
+- target setting
+*** Movement
+180 turn
+smooth left
+smooth right
+diagonals
+
+*** Order of first features
+Wall follower plus
+1. Position tracking using odemetry
+2. Re-calibration of position using wall edges
+3. Mapping
+4. Right sensor for right wall detection
+5. Left or right position would be nice to know.
+- better when two walls 
+6. Angled would be nice to know
+- when two walls partially possible
+- when approaching one wall would indiciate angle
+ -- can calculate if you know speed?
+    --- or left/right position change over time period
+*** Position info
+16x16 maze 
+0xFFFF max unsigned
+each cell = 180mm (168mm betweeen walls)
+Approx. 0.6mm per step
+steps 300 per cell
+But diagnoals, or other headings, mean could be less than that.
+if 0.1mm resolution, then cell would be 180*10 = 1800. 
+
+28800 is 16 * 1800. 
+
+if square if 0.6mm, diagonal would be 0.8485mm. 
+
+Would we want position as two entries (of cell offset plus cell position) 
+or single X and Y.
+
+Two entries would avoid divides for looking up in map.
+
+Position could be average of two week odemetry, avoid angle to some extent 
+for going down corridors.
+
+*** Sensor calibration idea
+MODE 1: cal-ex
+Put mouse at back wall, in the center.
+Move forward slowly 34mm or 60 (34/0.6) steps
+ (Mouse is about 100mm long, inside is 180-12 = 168mm. Therefore movement is 168mm-100mm/2)
+Rotate 360 degrees slowly
+Record sensor readings (maybe into SPI RAM) and rotation angle
+Stream out to serial port to allow spreadsheet analysis
+
+MODE 2: cal
+
+As per mode 1, but without streaming. 
+We know distances of the walls during rotation. Use this to calibrate sensors.
 * Done

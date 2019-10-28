@@ -20,12 +20,18 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
  * Half turn = 121 mm
  * Quarter turn = 60.5 mm ... should be 433, actually 390.
 *******************************************************************************/
+//The Internal Fast RC (FRC) Oscillator provides a nominal 7.37 MHz clock 
+// Default PLL = 6.25
+// So FOSC = Approx. 46 MHz
+// FOSC is divided by 2 to generate the device instruction clock (FCY) and the peripheral clock time base (FP). 
 #pragma config FNOSC = FRCPLL // Oscillator Mode (Internal Fast RC (FRC) w/ PLL)
 #pragma config FWDTEN = OFF   // Watchdog Timer Enable (Watchdog timer
                               // enabled/disabled by user software)
+#pragma config OSCIOFNC = ON  // disable OSC2 pin from oscillating
+
 #include <stdio.h>
 #include <stdlib.h>
-#include  <xc.h>
+#include <xc.h>
 #include <string.h>
 
 #define DIGOLE_OLED 0
@@ -48,6 +54,10 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 #else
 #error "Serial output format not defined!"
 #endif
+
+#define QUARTER_TURN 80
+#define HALF_TURN 160
+#define FULL_TURN 320
 
 /* These constants are the ones that need tweaking */
 int left_wall_level = 5;
@@ -98,6 +108,13 @@ char running_str[]    = DISPLAY_TEXT "     Running\n";
 #define IR_6_TRIS _TRISA9
 #define L_PWM PDC2
 #define R_PWM PDC3
+#define SRAM_CS LATAbits.LATA3
+#define SRAM_CS_TRIS _TRISA3
+
+#define SPIOUT_PIN LATBbits.LATB9
+#define SPIOUT_TRIS _TRISB9
+#define SPIIN_PIN LATBbits.LATB7
+#define SPIIN_TRIS _TRISB7
 
 
 /* Varibables used in code  */
@@ -154,6 +171,7 @@ int wall_tracking;      // a counter for how long we've been tracking the wall
 void delay_milliseconds(unsigned int milliseconds);
 void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds);
 //void short_delay(unsigned int microseconds);
+void Init_SPI(void);
 
 void wait_for_go(void);
 void read_RF_sensor(void);
@@ -724,13 +742,22 @@ void init_hardware(void)
     IR_5_TRIS = 0;
     IR_6_TRIS = 0;
     _TRISB5 = 0;           //set pin 41 for output for Uart TX
+    SRAM_CS_TRIS = 0;       // set pin 31 for output to allow control of SRAM CS
+    SRAM_CS = 1;            // CS is active low, so disable
+    
 /******************************************************************************/
     /* Setup Remappable Pins*/
-    RPINR18 = 0X0006;       //Uart 1 RX mapped to RP6 pin 42
+    RPINR18 = 0XFF06;       //Uart 1 RX mapped to RP6 pin 42
     RPOR2 = 0X0300;         //Uart 1 TX mapped to RP5 pin 41
     RPINR14 =0x1716;        //Pins 2(RP22), 3(RP23) for QEI 1 inputs
     RPINR16 =0x1918;        //Pins 4(RP24), 5(RP25) for QEI 2 inputs
-
+    // spi setup
+    //RPINR20 = 0xFF07;// SPI1 Data Input, SPI IN, RP7, pin 43   
+    //RPOR4 = 0x0708; // function 8 = SPI1 Clock Output, SPI CLK RP8 (lower byte), pin 44)
+                    // function 7 = SPI1 Data Output, SPI OUT, RP9 (upper byte), pin 1
+    
+    //Init_SPI();
+    
     /* Configure the UART */
     U1MODE = 0x8400;        // 2 stop bits needed for crownhill display
     U1STA = 0;
@@ -1185,6 +1212,264 @@ void sensor_display_cmd(const char* args)
     sensor_display();
 }
 
+void Init_SPI(void)
+{
+    // setup the SPI peripheral
+    SPI1STAT = 0x0;  // disable the SPI module (just in case)
+//  SPI1CON1 = 0x0161;	// FRAMEN = 0, SPIFSD = 0, DISSDO = 0, MODE16 = 0; SMP = 0; CKP = 1; CKE = 1; SSEN = 0; MSTEN = 1; SPRE = 0b000, PPRE = 0b01
+    SPI1CON1 = 0x0578;	//             SPIFSD = 0, DISSDO = 0, MODE16 = 1; SMP = 0; CKP = 1; CKE = 1; SSEN = 0; MSTEN = 1; SPRE = 0b110, PPRE = 0b11
+    
+    // main clock is 23 MHz (/2 of Fosc)
+    // SPI Peripheral clock is /2 = 12MHz.
+    // 111 = Secondary prescale 1:1
+    // 110 = Secondary prescale 2:1
+    // 000 = Secondary prescale 8:1
+    // 11 = Primary prescale 1:1
+    // 10 = Primary prescale 4:1
+    // 01 = Primary prescale 16:1
+    // 00 = Primary prescale 64:1
+    // SMP: SPIx Data Input Sample Phase bit Master mode:
+    //          0 = Input data sampled at middle of data output time 
+    // CKE: SPIx Clock Edge Select bit(1) 
+    //          1 = Serial output data changes on transition from active clock state to Idle clock state (see bit 6) 
+    // CKP: Clock Polarity Select bit 
+    //          0 = Idle state for clock is a low level; active state is a high level 
+    SPI1CON1bits.CKE = 0x01;
+    SPI1CON1bits.CKP = 0x00;
+    SPI1STAT = 0x8000; // enable the SPI module 
+}
+
+void start_SPI_write(unsigned short address)
+{
+    short temp;	
+    SRAM_CS = 0;		// lower the slave select line
+    // pause required here? 25ns required, instruction time = 43ns. Should be ok :-)
+    
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+    temp = (address&0x8000) ? 0x0201 : 0x0200;        // instruction 0x02 is write
+    SPI1BUF = temp;		// write the data out to the SPI peripheral
+    
+    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
+            ;
+    
+    SPI1BUF = (unsigned short)(address << 1);   // emulate 16 bit address
+
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
+            ;
+
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+    
+    // the second part of the address is now being sent out, while the function returns
+}
+
+void SPI_write_u16(unsigned short data)
+{
+    short temp;
+
+    // don't care about data in write mode, throw it away
+    if(SPI1STATbits.SPIRBF)
+    {
+        temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag    
+    }
+    
+    // wait until buffer has been transferred to the shift register
+    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
+            ;
+    
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag    
+    
+    SPI1BUF = data;
+}
+#define SPI_write_s16(data) SPI_write_u16((unsigned short)data)
+
+void SPI_write_finish()
+{    
+    short temp;	
+
+    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
+            ;
+
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
+            ;
+
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+
+    SRAM_CS = 1;		// raise the slave select line    
+}
+
+
+void start_SPI_read(unsigned short address)
+{
+    short temp;	
+    SRAM_CS = 0;		// lower the slave select line
+    // pause required here? 25ns required, instruction time = 43ns. Should be ok :-)
+    
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+    temp = (address&0x8000) ? 0x0301 : 0x0300;        // instruction 0x03 is read
+    SPI1BUF = temp;		// write the data out to the SPI peripheral
+    
+    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
+            ;
+    
+    SPI1BUF = (unsigned short)(address << 1);   // emulate 16 bit address
+
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
+            ;
+
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+}
+
+unsigned short SPI_read_u16(void)
+{
+    //short temp;	
+    
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be read
+        ;
+    return SPI1BUF;
+}
+
+#define SPI_read_s16() ((signed short)SPI_read_u16())
+
+void SPI_read_finish()
+{    
+    short temp;	
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
+            ;
+
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+
+    SRAM_CS = 1;		// raise the slave select line    
+}
+
+
+
+void write_SPI(short command)
+{	
+    short temp;	
+
+    SRAM_CS = 0;		// lower the slave select line
+    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+    SPI1BUF = command;		// write the data out to the SPI peripheral
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out
+            ;
+    SRAM_CS = 1;		// raise the slave select line
+}
+/*
+void calexport_cmd(const char* args)
+{
+    // Put mouse at back wall, in the center.
+    // Move forward slowly 34mm or 60 (34/0.6) steps
+    // (Mouse is about 100mm long, inside is 180-12 = 168mm. Therefore movement is 168mm-100mm/2)
+    int my_speed = 20;
+    int address = 0;
+
+    // move_forward 60
+    L_PWM = stop+my_speed;
+    R_PWM = stop+my_speed;
+
+    PTCONbits.PTEN = 1;     // Start PWM
+
+    // 100 counts = 56mm, quarter turn is 60.5mm
+    POS1CNT = 0; //zero the Left wheel counter
+    while (POS1CNT < 60); // Left wheel counter
+
+    L_PWM = stop;
+    R_PWM = stop;  
+    delay_seconds_milliseconds(2, 0);
+    
+    // Rotate 360 degrees slowly
+    // Record sensor readings (maybe into SPI RAM) and rotation angle
+
+    L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
+    R_PWM = stop-my_speed; // Speed for Right motor for clockwise spin
+
+    // 100 counts = 56mm, quarter turn is 60.5mm
+    POS1CNT = 0; //zero the Left wheel counter
+    POS2CNT = 0;
+    while (POS1CNT < FULL_TURN) // Left wheel counter
+    {
+        unsigned int dataarray[10];
+        unsigned int* buf = dataarray;
+        // so we can calculate how long the sensor readings take
+        *buf++ = tick0_1ms;
+        *buf++ = POS1CNT;
+        *buf++ = POS2CNT;
+        read_RF_sensor();
+        read_L_sensor();
+        read_R_sensor();
+        read_LF_sensor()
+        // record: time, 4 sensors, pos 1 count, pos 2 count, 
+        *buf++ = tick0_1ms;
+        *buf++ = POS1CNT;
+        *buf++ = POS2CNT;
+        *buf++ = r_front;
+        *buf++ = l_dia;
+        *buf++ = r_dia;
+        *buf++ = l_front;
+        // stream to SPI RAM? or internal RAM ok?
+        spi_write_block16(address, buf);
+        //for(int i=0; i < 10; i++)
+        //{
+        //    spi_write16(address++, buf[i]);
+        //}
+    }
+
+    L_PWM = stop;
+    R_PWM = stop;  
+    
+    // Stream out to serial port to allow spreadsheet analysis
+    // 960cps for 14 values, would be ~68 values in one second
+    // better to RAM buffer?
+}
+*/
+
+void por_cmd(const char* args)
+{
+    printf("%u\r\n", RCON);
+}
+
+void spiw_cmd(const char* args)
+{
+    unsigned short addr = 0;
+    unsigned short data = 0;
+    if(args != 0)
+    {
+        sscanf(args, "%hu %hu", &addr, &data);
+    }
+    start_SPI_write(addr);
+    SPI_write_u16(data);
+    SPI_write_finish();
+}
+
+void spio_test_cmd(const char* args)
+{
+    int i;
+    SPIOUT_TRIS = 0;
+    for(i = 0; i < 100; i++)
+    {
+        SPIOUT_PIN = 1;
+        delay_seconds_milliseconds(0,1);
+        SPIOUT_PIN = 0;   
+        delay_seconds_milliseconds(0,1);
+    }
+    SPIOUT_TRIS = 1;
+}
+
+void spii_test_cmd(const char* args)
+{
+    int i;
+    SPIIN_TRIS = 0;
+    for(i = 0; i < 100; i++)
+    {
+        SPIIN_PIN = 1;
+        delay_seconds_milliseconds(0,1);
+        SPIIN_PIN = 0;   
+        delay_seconds_milliseconds(0,1);
+    }
+    SPIIN_TRIS = 1;
+}
+
+
 void help_cmd(const char* args);
 
 typedef struct { 
@@ -1209,6 +1494,11 @@ command_type commands[] = {
     { "fwd", fwd_cmd },
     { "speed_display", speed_display_cmd },
     { "sensor_display", sensor_display_cmd },
+    //{ "calexport", calexport_cmd },
+    { "por", por_cmd },
+    { "spiw", spiw_cmd },
+    { "spio_test", spio_test_cmd },
+    { "spii_test", spii_test_cmd },
 
     { 0, 0}
 };
