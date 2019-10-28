@@ -888,25 +888,36 @@ void delay_seconds_milliseconds(unsigned int seconds, unsigned int milliseconds)
 void read_line(char *buffer, int max_len)
 {
     int c;
+    int chars_left = max_len;
     // clear errors
     clear_overflow();
     
     // read a line
-    while(max_len > 0)
+    while(chars_left > 0)
     {
         c = getch();
         if(c == 10 || c == 13)
         {
             break;
         }
-        
+        if(c == '\x7f')
+        {
+            if(chars_left != max_len)
+            {
+                //puts("\x1B[1D");
+                printf("\b \b");
+                buffer--;
+                chars_left++;
+            }
+            continue;
+        }
         *buffer = c;
         putchar(*buffer);
         buffer++;
-        max_len--;
+        chars_left--;
     }
     // zero terminate it always
-    if(max_len==0)
+    if(chars_left==0)
     {
         buffer--;
     }
