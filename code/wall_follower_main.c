@@ -751,10 +751,6 @@ void init_hardware(void)
     RPOR2 = 0X0300;         //Uart 1 TX mapped to RP5 pin 41
     RPINR14 =0x1716;        //Pins 2(RP22), 3(RP23) for QEI 1 inputs
     RPINR16 =0x1918;        //Pins 4(RP24), 5(RP25) for QEI 2 inputs
-    // spi setup
-    RPINR20 = 0xFF07;// SPI1 Data Input, SPI IN, RP7, pin 43   
-    RPOR4 = 0x0708; // function 8 = SPI1 Clock Output, SPI CLK RP8 (lower byte), pin 44)
-                    // function 7 = SPI1 Data Output, SPI OUT, RP9 (upper byte), pin 1
     
     Init_SPI();
     
@@ -1225,16 +1221,32 @@ void sensor_display_cmd(const char* args)
 
 void Init_SPI(void)
 {
+    // spi pin setup
+    RPINR20 = 0xFF07;// SPI1 Data Input, SPI IN, RP7, pin 43   
+    RPOR4 = 0x0708; // function 8 = SPI1 Clock Output, SPI CLK RP8 (lower byte), pin 44)
+                    // function 7 = SPI1 Data Output, SPI OUT, RP9 (upper byte), pin 1
+
     // setup the SPI peripheral
     SPI1STAT = 0x0;  // disable the SPI module (just in case)
+    //
+    // SFR Name Addr Bit 15 Bit 14 Bit 13 Bit 12 Bit 11 Bit 10 Bit 9 Bit 8 Bit 7 Bit 6 Bit 5 Bit 4 Bit 3 Bit 2 Bit 1 Bit 0
+  // SPI1CON1   0242   —      —       —   DISSCK DISSDO MODE16  SMP    CKE  SSEN CKP   MSTEN ----SPRE<2:0>----  PPRE<1:0>  Reset Value = 0000
 //  SPI1CON1 = 0x0161;	// FRAMEN = 0, SPIFSD = 0, DISSDO = 0, MODE16 = 0; SMP = 0; CKP = 1; CKE = 1; SSEN = 0; MSTEN = 1; SPRE = 0b000, PPRE = 0b01
-    SPI1CON1 = 0x0578;	//             SPIFSD = 0, DISSDO = 0, MODE16 = 1; SMP = 0; CKP = 1; CKE = 1; SSEN = 0; MSTEN = 1; SPRE = 0b110, PPRE = 0b11
-    
+    SPI1CON1 = 0x057B;	//             SPIFSD = 0, DISSDO = 0, MODE16 = 1; SMP = 0; CKP = 1; CKE = 1; SSEN = 0; MSTEN = 1; SPRE = 0b110, PPRE = 0b11    
+//    SPI1CON1 = 0x0573;	//             SPIFSD = 0, DISSDO = 0, MODE16 = 1; SMP = 0; CKP = 1; CKE = 1; SSEN = 0; MSTEN = 1; SPRE = 0b110, PPRE = 0b11
+    // 
     // main clock is 23 MHz (/2 of Fosc)
     // SPI Peripheral clock is /2 = 12MHz.
+    //
     // 111 = Secondary prescale 1:1
-    // 110 = Secondary prescale 2:1
+    // 110 = Secondary prescale 2:1     <<<-- will give 12 MHz (with primary set at 1:1). However logic analyser is 20 Msps
+    // 101 = 3:1
+    // 100 = 4:1
+    // 011 = 5:1
+    // 010 = 6:1
+    // 001 = 7:1
     // 000 = Secondary prescale 8:1
+    //
     // 11 = Primary prescale 1:1
     // 10 = Primary prescale 4:1
     // 01 = Primary prescale 16:1
@@ -1250,9 +1262,16 @@ void Init_SPI(void)
     SPI1STAT = 0x8000; // enable the SPI module 
 }
 
+unsigned short _SPI_wait_read_buf(void)
+{
+    while (!SPI1STATbits.SPIRBF)	// wait for the data to be read
+        ;
+    return SPI1BUF;
+}
+
 void start_SPI_write(unsigned short address)
 {
-    short temp;	
+    short temp;
     SRAM_CS = 0;		// lower the slave select line
     // pause required here? 25ns required, instruction time = 43ns. Should be ok :-)
     
@@ -1260,51 +1279,31 @@ void start_SPI_write(unsigned short address)
     temp = (address&0x8000) ? 0x0201 : 0x0200;        // instruction 0x02 is write
     SPI1BUF = temp;		// write the data out to the SPI peripheral
     
-    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
-            ;
+    _SPI_wait_read_buf();
     
     SPI1BUF = (unsigned short)(address << 1);   // emulate 16 bit address
 
-    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
-            ;
-
-    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
-    
     // the second part of the address is now being sent out, while the function returns
 }
 
 void SPI_write_u16(unsigned short data)
 {
-    short temp;
-
-    // don't care about data in write mode, throw it away
-    if(SPI1STATbits.SPIRBF)
-    {
-        temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag    
-    }
-    
-    // wait until buffer has been transferred to the shift register
-    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
-            ;
-    
-    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag    
-    
+    _SPI_wait_read_buf();    
     SPI1BUF = data;
 }
 #define SPI_write_s16(data) SPI_write_u16((unsigned short)data)
 
 void SPI_write_finish()
 {    
-    short temp;	
+    _SPI_wait_read_buf();
 
-    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
-            ;
-
-    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
-            ;
-
-    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
-
+    // Need to wait over 1 bit after . At 12MHz this is 83ns.
+    // At 6MHz this is 176ns (used for logic analyser)
+    // Instructions are 43ns. 
+    //asm("repeat #5");      //200ns delay
+    //asm("nop");
+    // actual delay is much longer because of call overhead
+    
     SRAM_CS = 1;		// raise the slave select line    
 }
 
@@ -1318,42 +1317,34 @@ void start_SPI_read(unsigned short address)
     temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
     temp = (address&0x8000) ? 0x0301 : 0x0300;        // instruction 0x03 is read
     SPI1BUF = temp;		// write the data out to the SPI peripheral
-    
-    while(SPI1STATbits.SPITBF)  // SPIx Transmit Buffer Full Status bit is set until the SPIxTXB) is moved to the SPIxSR
-            ;
+    _SPI_wait_read_buf();    
     
     SPI1BUF = (unsigned short)(address << 1);   // emulate 16 bit address
-
-    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
-            ;
-
-    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+    _SPI_wait_read_buf();
 }
 
 unsigned short SPI_read_u16(void)
 {
-    //short temp;	
-    
-    while (!SPI1STATbits.SPIRBF)	// wait for the data to be read
-        ;
-    return SPI1BUF;
+    SPI1BUF = 0; // dummy value
+    return _SPI_wait_read_buf();
 }
 
 #define SPI_read_s16() ((signed short)SPI_read_u16())
 
 void SPI_read_finish()
-{    
-    short temp;	
-    while (!SPI1STATbits.SPIRBF)	// wait for the data to be sent out (instruction, first part of address)
-            ;
-
-    temp = SPI1BUF;		// dummy read of the SPI1BUF register to clear the SPIRBF flag
+{
+    // Need to wait over 1 bit after . At 12MHz this is 83ns.
+    // At 6MHz this is 176ns (used for logic analyser)
+    // Instructions are 43ns. 
+    //asm("repeat #5");      //200ns delay
+    //asm("nop");
+    // actual delay is much longer because of call overhead
 
     SRAM_CS = 1;		// raise the slave select line    
 }
 
 
-
+/*
 void write_SPI(short command)
 {	
     short temp;	
@@ -1365,6 +1356,8 @@ void write_SPI(short command)
             ;
     SRAM_CS = 1;		// raise the slave select line
 }
+*/
+
 /*
 void calexport_cmd(const char* args)
 {
@@ -1447,9 +1440,67 @@ void spiw_cmd(const char* args)
     {
         sscanf(args, "%hu %hu", &addr, &data);
     }
+    printf("Write %hu to %hu\r\n", data, addr);
     start_SPI_write(addr);
     SPI_write_u16(data);
     SPI_write_finish();
+}
+
+void spiw2_cmd(const char* args)
+{
+    unsigned short addr = 0;
+    unsigned short data = 0;
+    unsigned short data2 = 0;
+    if(args != 0)
+    {
+        sscanf(args, "%hu %hu %hu", &addr, &data, &data2);
+    }
+    printf("Write %hu then %hu to %hu\r\n", data, data2, addr);
+    start_SPI_write(addr);
+    SPI_write_u16(data);
+    SPI_write_u16(data2);
+    SPI_write_finish();
+}
+
+void spir_cmd(const char* args)
+{
+    unsigned short addr = 0;
+    unsigned short data;
+    if(args != 0)
+    {
+        sscanf(args, "%hu", &addr);
+    }
+    start_SPI_read(addr);
+    data = SPI_read_u16();
+    SPI_read_finish();
+    printf("Read %hu from %hu\r\n", data, addr);
+}
+
+void spi_test_cmd(const char* args)
+{
+    unsigned short addr;
+    unsigned short data;
+
+    // one less than max.
+    for(addr = 0; addr < 65535; addr++)
+    {
+        start_SPI_write(addr);
+        SPI_write_u16(addr);
+        SPI_write_finish();
+    }
+
+    for(addr = 0; addr < 65535; addr++)
+    {
+        start_SPI_read(addr);
+        data = SPI_read_u16();
+        SPI_read_finish();
+        if(data != addr)
+        {
+            printf("Failed %hu read %hu\r\n", addr, data);
+            return;
+        }
+    }
+    printf("Pass\r\n");
 }
 
 /*
@@ -1509,6 +1560,9 @@ command_type commands[] = {
     //{ "calexport", calexport_cmd },
     { "por", por_cmd },
     { "spiw", spiw_cmd },
+    { "spiw2", spiw2_cmd },
+    { "spir", spir_cmd },
+    { "spi_test", spi_test_cmd },
     //{ "spio_test", spio_test_cmd },
     //{ "spii_test", spii_test_cmd },
 
