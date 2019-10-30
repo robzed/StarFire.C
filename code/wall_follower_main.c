@@ -57,7 +57,7 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 
 #define QUARTER_TURN 80
 #define HALF_TURN 160
-#define FULL_TURN 320
+#define FULL_TURN 390
 
 /* These constants are the ones that need tweaking */
 int left_wall_level = 5;
@@ -1358,15 +1358,17 @@ void write_SPI(short command)
 }
 */
 
-/*
+
 void calexport_cmd(const char* args)
 {
     // Put mouse at back wall, in the center.
     // Move forward slowly 34mm or 60 (34/0.6) steps
     // (Mouse is about 100mm long, inside is 180-12 = 168mm. Therefore movement is 168mm-100mm/2)
     int my_speed = 20;
-    int address = 0;
-
+    unsigned short address = 0;
+    unsigned short count = 0;
+    unsigned short data;
+    
     // move_forward 60
     L_PWM = stop+my_speed;
     R_PWM = stop+my_speed;
@@ -1379,53 +1381,59 @@ void calexport_cmd(const char* args)
 
     L_PWM = stop;
     R_PWM = stop;  
+    
+    start_SPI_write(address);
+
     delay_seconds_milliseconds(2, 0);
     
-    // Rotate 360 degrees slowly
-    // Record sensor readings (maybe into SPI RAM) and rotation angle
-
-    L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
-    R_PWM = stop-my_speed; // Speed for Right motor for clockwise spin
-
     // 100 counts = 56mm, quarter turn is 60.5mm
     POS1CNT = 0; //zero the Left wheel counter
     POS2CNT = 0;
-    while (POS1CNT < FULL_TURN) // Left wheel counter
+    
+    // Rotate 360 degrees slowly
+    // Record sensor readings (SPI RAM) and rotation angle
+    L_PWM = stop+my_speed;// Speed for Left motor for clockwise spin
+    R_PWM = stop-my_speed; // Speed for Right motor for clockwise spin
+
+    while (POS1CNT < FULL_TURN || count == 9362) // Left wheel counter
     {
-        unsigned int dataarray[10];
-        unsigned int* buf = dataarray;
         // so we can calculate how long the sensor readings take
-        *buf++ = tick0_1ms;
-        *buf++ = POS1CNT;
-        *buf++ = POS2CNT;
+        SPI_write_u16(tick0_1ms);
+        SPI_write_u16(POS1CNT);
+        SPI_write_u16(POS2CNT);
         read_RF_sensor();
+        SPI_write_u16(r_front);
         read_L_sensor();
+        SPI_write_u16(l_dia);
         read_R_sensor();
-        read_LF_sensor()
-        // record: time, 4 sensors, pos 1 count, pos 2 count, 
-        *buf++ = tick0_1ms;
-        *buf++ = POS1CNT;
-        *buf++ = POS2CNT;
-        *buf++ = r_front;
-        *buf++ = l_dia;
-        *buf++ = r_dia;
-        *buf++ = l_front;
-        // stream to SPI RAM? or internal RAM ok?
-        spi_write_block16(address, buf);
-        //for(int i=0; i < 10; i++)
-        //{
-        //    spi_write16(address++, buf[i]);
-        //}
+        SPI_write_u16(r_dia);
+        read_LF_sensor();
+        SPI_write_u16(l_front);
+        count++;
     }
+    SPI_write_finish();
 
     L_PWM = stop;
     R_PWM = stop;  
-    
+        
     // Stream out to serial port to allow spreadsheet analysis
     // 960cps for 14 values, would be ~68 values in one second
     // better to RAM buffer?
+    printf("%hu\r\n", count);
+    start_SPI_read(address);
+    for(address = 0; address < count; address++)
+    {
+        int i;
+        for(i = 0; i < 7; i++)
+        {
+            data = SPI_read_u16();
+            printf("%hu ", data);
+        }
+        printf("\r\n");
+    }
+    SPI_read_finish();
 }
-*/
+
 
 void por_cmd(const char* args)
 {
@@ -1557,7 +1565,7 @@ command_type commands[] = {
     { "fwd", fwd_cmd },
     { "speed_display", speed_display_cmd },
     { "sensor_display", sensor_display_cmd },
-    //{ "calexport", calexport_cmd },
+    { "calexport", calexport_cmd },
     { "por", por_cmd },
     { "spiw", spiw_cmd },
     { "spiw2", spiw2_cmd },
