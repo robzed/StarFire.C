@@ -104,7 +104,6 @@ char running_str[]    = "     Running\n";
 /* unsigned 16 bit integers */
 int stop = 0x100;		//
 volatile unsigned int tick1;
-volatile unsigned int tick2;
 volatile unsigned int tick0_1ms;
 unsigned int V_bat;     // raw ADC reading for battery. 
 // 1024@3.3v 0-3.3 input. divider = 4k7/10k. 
@@ -169,7 +168,8 @@ void do_commands(void);
 #endif
 void lturn(int straight_distance, int my_distance, int my_speed);
 
-// borland c like functions
+/******************************************************************************/
+// Borland-C-like functions for serial interface
 #define kbhit() U1STAbits.URXDA
 int getch(void)
 { 
@@ -209,17 +209,17 @@ int main()
     // If But_A Not pressed then wait for it to be pressed and released
     while (R_BUT)          // wait for button to be pressed
     {
-    blink = run_speed;
+        blink = run_speed;
         while (blink > 0)
         {
-        tick1 = 0;
-        left_led = 1;
-        //right_led = 1;
-        while (tick1 < 2000);
-        left_led = 0;
-        //right_led = 0;
-        while (tick1 < 5000);
-        blink--;
+            tick1 = 0;
+            left_led = 1;
+            //right_led = 1;
+            while (tick1 < 2000);
+            left_led = 0;
+            //right_led = 0;
+            while (tick1 < 5000);
+            blink--;
         }
         if (kbhit())
         {
@@ -227,8 +227,8 @@ int main()
             do_commands();
         }
 
-    tick2 = 0;
-    while (tick2 < 10000){if(!R_BUT) tick2 = 10001;}    
+        tick1 = 0;
+        while (tick1 < 10000){if(!R_BUT) tick1 = 10001;}    
     }
 /******************************************************************************/    
     right_led = 1;
@@ -281,10 +281,6 @@ int main()
             R_PWM = Rspin;
             POS1CNT = 0; //zero the Left wheel counter
             while (POS1CNT < 100); // Left wheel counter
-            //tick2 = 0;          //reset tick2 timer for Right spin time
-            //L_PWM = Rspin;      //Spin anticlockwise to stop
-            //R_PWM = Lspin;      // over shoot
-            //while(tick2 < 20){} //2mS
             wall_tracking = 0;
             // added for wall tracking purposes
             POS1CNT = 0; //zero the Left wheel counter
@@ -434,7 +430,6 @@ void __attribute__((__interrupt__,__auto_psv__)) _T1Interrupt(void)
     {
     IFS0bits.T1IF = 0; 		/* clear interrupt flag */
     tick1++;
-    tick2++;
     tick0_1ms++;
 }
 /******************************************************************************/
