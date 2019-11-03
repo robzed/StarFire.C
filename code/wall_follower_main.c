@@ -1,4 +1,3 @@
-
 /*******************************************************************************
  2 wheeled WF Mouse using 33FJ128MC804 processor with 2 x QEI
 and Pololu Mini Motors

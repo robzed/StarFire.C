@@ -1,5 +1,11 @@
-* Next To Do
-** Add delete to command line interpreter
+* New Next To Do
+** Remove OLED stuff, clean up prints
+** 1. Remove tick1 tick2 and existing time-out code
+** Make start with movement components for maze solver
+- would allow to develop controlled l-turn
+** Make a simple maze solver
+* Older Next To Do
+** DONE Add delete to command line interpreter
 ** TODO Turning cirle
 0.5 1.3 is slightly too small - make bigger
 70 300 is a quarter
@@ -16,17 +22,12 @@
 ** DONE Make a line
 2x180 degree turns
 ** Staircase pattern
-** Make start with movement components for maze solver
-- would allow to develop controlled l-turn
 ** DONE Figure out why it doesn't turn left
 ** DONE Make a turn and spin command?
 ** Tune left hand turns
 ** Tune speed 2
 ** Tune speed 3
-** PR1 is being changed - check out usage - do we need to do this?
-** Make a simple maze solver
-** Remove OLED stuff, clean up prints
-
+** DONE PR1 is being changed - check out usage - do we need to do this?
 ** tweak movement constants
 ** DONE implement getch and getche
 ** more robust serial handling (avoid losing characters)
@@ -42,7 +43,7 @@
 ** [#A] Read C compiler manual - limitations on local variables
 ** DONE const vs. non-const allocation
 ** Read language tools manual
-** SPI RAM read/write
+** DONE SPI RAM read/write
 - would allow logging of complex data quickly
 - e.g. speed vs. sensors, etc. 
 - PID controller
@@ -50,7 +51,6 @@
 
 ** Warm start vs. power on detection, preserve maze map variable, etc.
 ** -----------------------------------------------
-** 1. Remove tick1 tick2 and existing time-out code
 ** 2. Fix indent.
 ** 3. Test display code
 ** 4. Figure out if tests works (LBUT / RBUT on start)
@@ -73,10 +73,10 @@
 ** dsPIC PID control library
 ** slips on back under of mouse
 ** Test motors
-** Test SPI SRAM
+** DONE Test SPI SRAM
 ** Test battery
 ** Check delays with delay variable (volatile required for optimisation?)
-** test LEDs
+** DONE test LEDs
 ** Program Modes
 How do button A, button B, sensors and 3 LEDs interoperate?
 *** Wall follower mode
