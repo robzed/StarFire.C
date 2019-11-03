@@ -1,10 +1,11 @@
 
 .DS_Store
 *~
+*.swp
 
 /code/StarFire.X/dist/
 /code/StarFire.X/build/
 /code/StarFire.X
 
 hardware/misc_microchip
-
+scripts/test_data/
