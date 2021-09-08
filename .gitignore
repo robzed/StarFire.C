@@ -8,4 +8,5 @@
 /code/StarFire.X
 
 hardware/misc_microchip
+hardware/motor_and_encoders
 scripts/test_data/

@@ -100,9 +100,9 @@ char running_str[]    = "     Running\n";
 //#define SPIIN_TRIS _TRISB7
 
 
-/* Varibables used in code  */
+/* Variables used in code  */
 /* unsigned 16 bit integers */
-int stop = 0x100;		//
+int stop = 0x100;       //
 volatile unsigned int tick1;
 volatile unsigned int tick0_1ms;
 unsigned int V_bat;     // raw ADC reading for battery. 
@@ -120,9 +120,6 @@ int r_dia;
 int l_front;
 int r_front;
 int old_wall_level;
-//int r_count;        //
-//int l_count;        //POS1CNT
-//int distance;
 int wf_dis;
 int set_speed;
 int max_speed;
@@ -143,9 +140,6 @@ int  Deriv;
 int  PD_error;
 
 int wall_tracking;      // a counter for how long we've been tracking the wall
-
-/* Floating point variables*/
-//float V_batf;
 
 //
 // function definitions
