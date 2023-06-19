@@ -253,8 +253,10 @@ int main()
         }
 //calculate motor speed settings
     set_speed = stop + max_speed;
-    Lspin = stop+max_speed; // Speed for Left motor for clockwise spin
-    Rspin = stop-max_speed; // Speed for Right motor for clockwise spin
+    //Lspin = stop+max_speed; // Speed for Left motor for clockwise spin
+    //Rspin = stop-max_speed; // Speed for Right motor for clockwise spin
+    Lspin = stop+speed1; // Speed for Left motor for clockwise spin
+    Rspin = stop-speed1; // Speed for Right motor for clockwise spin
     
     // these might need adjusting for different speeds...
     Lturn = stop+max_speed * 0.5; //0.5 Speed for Left motor for Left turn
