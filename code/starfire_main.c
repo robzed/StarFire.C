@@ -8,6 +8,8 @@ Description:
 2.0.2 My left turn code
 2.0.3 code for int on change to select run speed
 2.0.4 Various rob's changes
+2.0.5 Baud rate, other fixes
+ * 
  * 
 3 pulse encoder, 30:1 gearing, 32mm wheel, 90ppr x2 mode=180ppr = 0.5585mm = 0.56mm approx
 16 bits gives max distance of 2293mm
@@ -35,7 +37,7 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 
 #define SERIAL_TERMINAL 1
 
-#define TEXT_RETURN "\r\n"
+#define TEXT_RETURN "\n"
 
 
 #define QUARTER_TURN 80
@@ -55,7 +57,7 @@ int low_volts = 0x0262;     // 0x0262 6v cut off
 int go_level = 200;
 
 /* Text Strings used for OLED display */
-const char ver_str[]        = "    Ver 2.0.4\n";
+const char ver_str[]        = "Ver 2.0.5\n";
 char lr_str[]         = "Left_______Front\n";
 char speed_str[]      = "   Speed M/S\n";
 char sensor_wf_str[]  = " 4 x Sensor WF\n";
@@ -719,10 +721,10 @@ void init_hardware(void)
     Init_SPI();
     
     /* Configure the UART */
-    U1MODE = 0x8400;        // 2 stop bits needed for crownhill display
+    U1MODE = 0x8000;        // Enable UART, 8N1
     U1STA = 0;
     U1MODEbits.UARTEN = 1;
-    U1BRG = 148;             // 37 =38400, 148 = 9600
+    U1BRG = 37;             // 37 =38400, 148 = 9600
     U1STAbits.UTXEN = 1;
 /******************************************************************************/
     /* Configure OLED Display and send Ver No */ 
