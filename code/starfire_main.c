@@ -51,6 +51,7 @@ int front_wall_level = 80; // 230;
 int speed1 = 60;
 int speed2 = 70;
 int speed3 = 80;
+int speed4 = 90;
 int Kp =2;
 int Kd = 10;
 int low_volts = (int)(6100 / BATTERY_CONVERSION_TO_mV);     // moved to 6.1V from 0x0262 which is about 5.9v on this board     // 0x0262 6v cut off
@@ -238,6 +239,7 @@ int main()
     if (run_speed == 1){max_speed = speed1;}
     if (run_speed == 2){max_speed = speed2;}    
     if (run_speed == 3){max_speed = speed3;}
+    if (run_speed == 4){max_speed = speed4;}
 /******************************************************************************/    
     wait_for_go();          //button A has been pressed now wait for finger seen
 /******************************************************************************/
@@ -439,7 +441,7 @@ void __attribute__((__interrupt__,__auto_psv__)) _CNInterrupt(void)
     {
     // ISR Code goes here
     if(!L_BUT){run_speed++;}
-    if(run_speed > 3){run_speed = 1;}
+    if(run_speed > 4){run_speed = 1;}
     // Remember to do this next time !!!!
     IFS1bits.CNIF = 0;      //clear CN interrupt flag   
     }
