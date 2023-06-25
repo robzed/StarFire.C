@@ -1567,13 +1567,13 @@ void run_command(char* str)
     if(str == 0) { return; }
     
     command_type* cp = commands;
-    char* token = strtok(str, " \t"); 
+    char* token = strtok(str, " \t");
+    if(token && (token[0] != 0))
     while(1)
     {
-
-        if(cp->cmd == 0 || token == 0)
+        if(cp->cmd == 0)
         {
-            printf("?" TEXT_RETURN);
+            printf("%s ?", token);
             break;
         }
         
@@ -1581,10 +1581,12 @@ void run_command(char* str)
         if(strcmp(cp->cmd, token)==0)
         {
             cp->func(strtok(NULL, ""));
+            printf(" ok");
             break;
         }
         cp++;
     }
+    bat_cmd();
 }
 
 
@@ -1599,4 +1601,21 @@ void do_commands(void)
     }
 }
 
+int fractional_line(void)
+{
+    return 0;
+}
+
+void process_serial_in(void)
+{
+    int len = 1;
+    while(len)
+    {
+        len = fractional_line();
+        if(len)
+        {
+            run_command(cmdbuf);
+        }
+    }
+}
 #endif
