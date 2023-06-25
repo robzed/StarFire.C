@@ -38,7 +38,7 @@ This version is using only 4 sensors 2 x 30 and 2 x forward
 #define SERIAL_TERMINAL 1
 
 #define TEXT_RETURN "\n"
-
+#define BATTERY_CONVERSION_TO_mV (9.70F)
 
 #define QUARTER_TURN 80
 #define HALF_TURN 160
@@ -53,11 +53,11 @@ int speed2 = 70;
 int speed3 = 80;
 int Kp =2;
 int Kd = 10;
-int low_volts = 0x0262;     // 0x0262 6v cut off
+int low_volts = (int)(6100 / BATTERY_CONVERSION_TO_mV);     // moved to 6.1V from 0x0262 which is about 5.9v on this board     // 0x0262 6v cut off
 int go_level = 200;
 
 /* Text Strings used for OLED display */
-const char ver_str[]        = "Ver 2.0.5\n";
+const char ver_str[]        = "Ver 2.0.6\n";
 char lr_str[]         = "Left_______Front\n";
 char speed_str[]      = "   Speed M/S\n";
 char sensor_wf_str[]  = " 4 x Sensor WF\n";
@@ -163,6 +163,7 @@ void init_hardware(void);
 void do_commands(void);
 #endif
 void lturn(int straight_distance, int my_distance, int my_speed);
+void bat_cmd();
 
 /******************************************************************************/
 // Borland-C-like functions for serial interface
@@ -224,7 +225,9 @@ int main()
         }
 
         tick1 = 0;
-        while (tick1 < 10000){if(!R_BUT) tick1 = 10001;}    
+        while (tick1 < 10000){if(!R_BUT) tick1 = 10001;}
+        
+        read_Bat_volts();
     }
 /******************************************************************************/    
     right_led = 1;
@@ -738,10 +741,10 @@ void init_hardware(void)
     //printf (TEXT_RETURN);
     //puts(pololu_str);           //Print what is in the Buffer6   
     //printf (TEXT_RETURN);
-    printf (TEXT_RETURN);
+    //printf (TEXT_RETURN);
     puts(ver_str);             //Print what is in the Buffer1 Ver x.x.x
-    printf (TEXT_RETURN);
-    printf (TEXT_RETURN);
+    //printf (TEXT_RETURN);
+    //printf (TEXT_RETURN);
     puts(press_r_str);             //Print what is in the Buffer8
 /******************************************************************************/   
     /* Configure T1 Timer Interrupt */
@@ -921,7 +924,7 @@ void bat_cmd()
     // ADC Ref = 3.3v
     // Therefore voltage in mV = (value / (ADC_ref * 1024)) * 14k7/4k7 * 1000 
     //                        = value * 10.079
-    printf("%d mV [%x]" TEXT_RETURN, (int)(V_bat * 9.70f), V_bat);  // adjusted from 10.1 to read closer to multimeter
+    printf("%d mV [%x]" TEXT_RETURN, (int)(V_bat * BATTERY_CONVERSION_TO_mV), V_bat);  // adjusted from 10.1 to read closer to multimeter
 }
 
 void led_cmd(const char* args)
