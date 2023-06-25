@@ -293,7 +293,7 @@ int main()
         if ((wf_dis - l_dia) > 0)
         {
             //to far right
-            PD_error = (wf_dis - l_dia) / 2;
+            PD_error = (wf_dis - l_dia) / 4;
         }
         else
         {
