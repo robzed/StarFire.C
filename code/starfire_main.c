@@ -921,7 +921,7 @@ void bat_cmd()
     // ADC Ref = 3.3v
     // Therefore voltage in mV = (value / (ADC_ref * 1024)) * 14k7/4k7 * 1000 
     //                        = value * 10.079
-    printf("%d mV" TEXT_RETURN, (int)(V_bat*10.1));
+    printf("%d mV [%x]" TEXT_RETURN, (int)(V_bat * 9.70f), V_bat);  // adjusted from 10.1 to read closer to multimeter
 }
 
 void led_cmd(const char* args)
