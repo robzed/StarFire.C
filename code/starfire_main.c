@@ -682,7 +682,7 @@ void low_battery(void){
     L_PWM = stop;
     R_PWM = stop;
     
-    printf("/r/nHALT:Low Bat %d mV/r/n", (int)(V_bat*10.1));
+    printf("\r\nHALT:Low Bat %d mV\r\n", (int)(V_bat*10.1));
     
     //Blink PWR LED to show mouse shut down due to low bat
     while(1)
@@ -1189,6 +1189,26 @@ void sensor_display_cmd(const char* args)
 {
     sensor_display();
 }
+void sensor_cmd(const char* args)
+{
+    while(! kbhit())
+    {
+        read_L_sensor();
+        printf ("LDiag Dark %d Light %d Diff %d \r\n",dark, l_dia+dark, l_dia);
+
+        read_LF_sensor();
+        printf ("LFront Dark %d Light %d Diff %d \r\n",dark, l_front+dark, l_front);
+
+        read_R_sensor();
+        printf ("RFront Dark %d Light %d Diff %d \r\n",dark, r_front+dark, r_front);
+
+        read_RF_sensor();
+        printf ("RDiag %d Light %d Diff %d \r\n",dark, r_dia+dark, r_dia);
+
+        delay_seconds_milliseconds(1,0);
+    }
+    getch();
+}
 
 void Init_SPI(void)
 {
@@ -1542,6 +1562,7 @@ command_type commands[] = {
     { "spiw2", spiw2_cmd },
     { "spir", spir_cmd },
     { "spi_test", spi_test_cmd },
+    { "sensor", sensor_cmd },
     //{ "spio_test", spio_test_cmd },
     //{ "spii_test", spii_test_cmd },
 
